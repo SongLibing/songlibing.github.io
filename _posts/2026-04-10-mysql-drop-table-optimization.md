@@ -160,7 +160,7 @@ MySQL-5.7 的实现是把这个对应关系写到 redo 中去，因此在做数�
 
 ## TRUNCATE TABLE 实操建议
 鉴于上述的问题，我们建议使用 `RENAME + DROP` 的方式来替代 `TRUNCATE TABLE`。
-```
+``` sql
 # 重建一张相同的表
 CREATE TABLE t1_new LIKE t1;
 # 检查重建表的表定义是否符合预期
