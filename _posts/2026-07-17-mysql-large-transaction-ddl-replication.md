@@ -12,15 +12,15 @@ MySQL官方从MySQL-5.6开始优化复制延迟问题，最先实现了 Schema �
 
 ## Binlog 实时复制的原理
 
-![](https://mmbiz.qpic.cn/sz_mmbiz_png/Jg6JM4XTDcdoiapepLfBPajWlVXCMsanwB0V7j7mx5JFzOU5bWDuOPibD44PlpncgyESHfTXvk6UwdPib37fXZPL9L4EDepiaE8zOicCOibOmjzBM/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=0)
+![](/assets/img/bigtxn-repl-1.webp)
 
 大事务和 DDL 的复制延迟原因如上图所示。Binlog 复制是以事务为单位，只有事务执行完了才会写入 Binlog 文件，然后传输到从库执行( DDL 可以看做一个事务），只有从库执行完毕，业务才能看到。如果事务执行了很长时间，在从库也需要执行同样的时间，就会产生复制延迟。延迟的时间就是从库执行事务的时间。实际上延迟可能会更大：其一对于大事务来说，因为产生的 Binlog Events 非常大，还有一块是传输导致的延迟。其二在大事务尤其是 DDL 执行期间，可能会阻塞其他的事务回放，导致更多的 Relay Log 堆积。大事务和 DDL 回放完成后，这些堆积的事务也需要一定的时间回放，才能够追平。
 
-![](https://mmbiz.qpic.cn/sz_mmbiz_png/Jg6JM4XTDce0NvK8AINIy2arj4SzKM9CdRyxwAYW9YNeZQwnwXaETDVsIonsUxicvK2mXmrbd2weseVzydj3nnK7NFqLIcCEQYlzjdXq5mOA/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=1)
+![](/assets/img/bigtxn-repl-2.webp)
 
 优化的思路也非常直观，那就是让从库和主库同时开始执行大事务、DDL，主库提交后，通知从库提交事务。通过这套机制，大事务和 DDL 的复制延迟可以控制在`1秒`以内。以下是优化前、优化后大事务产生的延迟对比，采用了实时复制的机制后大事务不再导致复制延迟，DDL 也一样。
 
-![](https://mmbiz.qpic.cn/sz_mmbiz_png/Jg6JM4XTDcdS9ibNt1n8W69W8ZZ48la0T07ZRRGZHTqj8nulMTazr2IspJhZZpsXRrPjBIYhiaJnpzLxVOUY1k3MgNPvw8cF1FovXH2qjDyYE/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=2)
+![](/assets/img/bigtxn-repl-3.webp)
 
 这个功能已于2025年在线上默认开启，截止目前累积3000+实例使用了该功能。大事务实时复制执行了约30万次，DDL实时复制执行了约6万次。
 
@@ -30,7 +30,7 @@ MySQL官方从MySQL-5.6开始优化复制延迟问题，最先实现了 Schema �
 
 实时复制分为实时传输和实时应用两部分。实时传输将主库上大事务实时产生的 Binlog Events 流式的发送到从库上，这一部分在《[MySQL大事务的Binlog传输优化](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484516&idx=1&sn=096bb73138047bf48187e1d33d892e91&scene=21#wechat_redirect)》做了介绍。实时应用则是实时的将这些传输过来的 Binlog Events 回放到从库，为此引入了一组额外的回放线程。如下图所示：
 
-![](https://mmbiz.qpic.cn/mmbiz_png/Jg6JM4XTDce6rbM87pLtEcibicxvCzMte7ic7cQEC9mVpmBjPyvPL67hBENthvEpib7fJXOQmWuxGDTZvrGzscQ29pUj8L6LtLeYbOQV9LTv8bQ/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=3)
+![](/assets/img/bigtxn-repl-4.webp)
 
 事务在主库执行的过程中，产生的 Binlog Events 会先暂存在 Binlog Cache 里；如果这是一个大事务（Binlog Cache 大小超过阈值），主库上的 Dump 线程会读取 Binlog Cache 临时文件，把Binlog Cache 里的 Binlog Events 直接发送到从库。从库收到后，写入一个专门的 `Brr Cache`（不是 Relay Log 文件），由一组新的 `Brr Worker` 线程实时应用。
 
@@ -42,7 +42,7 @@ MySQL官方从MySQL-5.6开始优化复制延迟问题，最先实现了 Schema �
 
 ### BRR 的整体架构
 
-![](https://mmbiz.qpic.cn/mmbiz_png/Jg6JM4XTDcfVeoNNH6TNmD2lf88hsicic8n67m5hKiaVh3U3qDBdJzJfr4O0HnoX7rZCxyjmP4bWkOedfVCgU0u4AqDPy7xrVlAy5HtV6oh6Rs/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=4)
+![](/assets/img/bigtxn-repl-5.webp)
 
 #### 主库端
 
@@ -52,7 +52,7 @@ MySQL官方从MySQL-5.6开始优化复制延迟问题，最先实现了 Schema �
 
 实时传输借用原有的 Dump 通道传输信息，为了区分 BRR 流量和普通流量，这里借鉴了 Semisync 的机制，给每个Event 添加了一个额外的 `BRR Header`。 通过 BRR Header 里的信息可以区分是 BRR 流量还是普通复制流量。 为了不让 BRR 事件把普通的 Binlog Events 通道堵死，BRR 做了流量控制。
 
-![](https://mmbiz.qpic.cn/sz_mmbiz_png/Jg6JM4XTDcdIF6icybicbBrBfObXXwBRNHtLhVR398rO5Qic2cEozSVII1v4aJ8sSl7rRuYd5KYiciakdD4ibdPW4pmISM9lVicILVpjXoymvlf5PA/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=5)
+![](/assets/img/bigtxn-repl-6.webp)
 
 #### 从库端
 
@@ -81,7 +81,7 @@ BRR 机制里使用 `gtid_executed 快照` 作为前后依赖关系的判定�
 
 ### 大事务实时复制
 
-![](https://mmbiz.qpic.cn/sz_mmbiz_png/Jg6JM4XTDccSWbOmWwQreBV9icTA9T40tg3mdpMHI5JgoTcpPicdgbfWQLblPUmJSzZiaSnXVHQ55ZXanWib1JNzgDNyf5mic4dlJrFjIOmbYLHU/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=6)
+![](/assets/img/bigtxn-repl-7.webp)
 
 #### Brr\_trx 的创建与更新
 
@@ -108,7 +108,7 @@ Dump 线程每次发送一批 Binlog Events 之前都要产生一个 `Brr_gtid_
 
 ### DDL 的实时应用
 
-![](https://mmbiz.qpic.cn/sz_mmbiz_png/Jg6JM4XTDcdsF2NtrKSSL52Nt46PuT7xNpiaN3iasSZ9KicNb1bOklia5lRtkOp7z5R0cWeKE1MwibpaKIpE89yhIHduMKvyPJOkDiaML5klLE968/640?wx_fmt=png&from=appmsg&watermark=1#imgIndex=7)
+![](/assets/img/bigtxn-repl-8.webp)
 
 #### Brr\_trx 的创建
 
