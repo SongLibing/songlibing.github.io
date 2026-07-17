@@ -5,7 +5,11 @@ categories: [Database, MySQL]
 tags: [MySQL, Replication, DDL, Large Transaction, Replication Lag]
 toc: true
 lang: en
+hidden: true
 ---
+
+> This article is also available in Chinese: [中文版](/posts/mysql-large-transaction-ddl-replication/). Browse [all English articles](/english/).
+{: .prompt-tip }
 
 Starting from MySQL 5.6, the official MySQL team has been working on replication lag, first implementing schema-level parallel application of the binlog. However, that level of parallelism does not solve everyday replication lag. MySQL 5.7 then introduced the `Commit-Order` parallel replay strategy, which depends on how many transactions run concurrently on the primary: only when the primary has a high degree of concurrency can the replica replay quickly. If concurrency on the primary is low, replay on the replica is still slow and lag builds up. To address this, MySQL 5.7 also introduced the `Writeset` (row-level) parallel strategy, which lets the replica replay in parallel quickly regardless of how concurrent the primary is.
 

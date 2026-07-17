@@ -6,6 +6,9 @@ tags: [MySQL, 复制, DDL, 大事务, 主从延迟]
 toc: true
 ---
 
+> 本文也有英文版：[English version](/posts/mysql-large-transaction-ddl-replication-en/)。
+{: .prompt-tip }
+
 MySQL官方从MySQL-5.6开始优化复制延迟问题，最先实现了 Schema 级别的 Binlog 并发应用。然而这个并发能力并不能解决日常的复制延迟。然后官方在 MySQL-5.7上实现了`基于提交顺序的并发回放策略(Commit Order)`, 这种策略依赖主上的事务并发执行数量。主上并发执行的事务非常多的情况下，从库上回放的速度才会快。如果主上并发少，从库上回放速度仍然会变慢，产生复制延迟。因此官方又在 MySQL-5.7 上又实现了`行级的并发策略(Writeset)`, 这种并发策略无论主上并发事务的多少，都能在从库上快速的并发回放。
 
 我们很早以前就在线上全面使用了基于 writeset 的复制策略，writeset 的使用解决了大概60%的复制延迟问题。另外有30%多的复制延迟问题源自于大事务和 DDL。在 MySQL 的复制体系里，大事务和 DDL 的复制延迟可谓是最难以解决的问题。去年，我们在 AliSQL 上实现了`Binlog 实时复制(Binlog Realtime Replication 简称BRR)`的机制，彻底解决了这个难题。
