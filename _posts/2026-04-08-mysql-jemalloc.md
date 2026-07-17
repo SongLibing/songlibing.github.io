@@ -48,12 +48,12 @@ export LD_PRELOAD=</路径/jemalloc.so.2>
 # 启动 mysqld
 ```
 如果使用mysqld_safe启动MySQL, 则可以在MySQL的配置文件中配置，如下：
-```
+```ini
 [mysqld_safe]
 malloc-lib = </路径/jemalloc.so.2>
 ```
 可以通过如下方法检查mysqld是否使用了jemalloc
-```
+```shell
 lsof -p <pid> |grep jemalloc
 ```
 
