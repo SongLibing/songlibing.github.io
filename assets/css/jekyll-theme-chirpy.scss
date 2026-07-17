@@ -1,1 +1,32 @@
+---
+---
 
+@use 'abstracts/variables' with (
+  $theme: '{{ site.theme_mode }}'
+);
+
+/* prettier-ignore */
+@use 'main
+{%- if jekyll.environment == 'production' -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/* 图片点击放大 (GLightbox)：
+   弹出的图片按其自身尺寸显示，但宽度不超过屏幕的 92%、高度不超过 88%，
+   超出时等比自动缩小，永远不会超出屏幕。 */
+.glightbox-container .gslide-image img {
+  max-width: 92vw !important;
+  max-height: 88vh !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* 代码高亮：MySQL 的 # 注释在通用 sql 词法里会被误判为“错误”而加上红色背景，
+   这里去掉这种错误高亮的红底，让注释正常显示。 */
+.highlight .err {
+  background-color: transparent !important;
+  color: inherit !important;
+}
