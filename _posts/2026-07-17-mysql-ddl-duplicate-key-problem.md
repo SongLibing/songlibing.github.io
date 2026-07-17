@@ -8,7 +8,7 @@ toc: true
 
 MySQL 在执行 Online DDL 重建表的时候，可能会碰到 `Duplicate Entry` 错误，从而导致 DDL 中途失败。失败信息如下所示：
 
-```mysql
+```sql
 mysql> alter table tt add c3 int, algorithm=inplace;  
 ERROR 1062 (23000): Duplicate entry '1' for key 'tt.uk_c2'
 ```
@@ -124,7 +124,7 @@ Row log 的回放一共执行两次：
 
 ### 测试用例
 
-```mysql
+```sql
 CREATE TABLE t1 (  
   c1 INT AUTO_INCREMENT PRIMARY KEY,  
   c2 INT,  
@@ -134,9 +134,9 @@ CREATE TABLE t1 (
 
 开启 3 个会话分别执行如下的语句
 
-```mysql
+```sql
 # Session 1  
-BEGIN;  
+BEGIN；  
 INSERT INTO t1 VALUES(NULL, 1);  
   
 # Session 2  
@@ -148,13 +148,13 @@ INSERT INTO t1 VALUES(NULL, 1); 
 
 执行完上述的语句后，将 Session 1 的事务提交。然后你会发现 Session 2 的 ALTER 和 Session 3 的 INSERT 都报了 `Duplicate Entry`
 
-```mysql
+```sql
 # Session 2  
-mysql> ALTER TABLE t1 ENGINE = InnoDB;
-ERROR 1062 (23000): Duplicate entry '1' for key 't1.c2'
+mysql> ALTER TABLE t1 ENGINE = InnoDB;  
+ERROR 1062 (23000): Duplicate entry '1' for key 't1.c2'  
   
 # Session 3  
-mysql> INSERT INTO t1 VALUES(2, 1);
+mysql> INSERT INTO t1 VALUES(2, 1);   
 ERROR 1062 (23000): Duplicate entry '1' for key 't1.c2'
 ```
 
