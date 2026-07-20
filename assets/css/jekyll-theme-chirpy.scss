@@ -30,3 +30,26 @@
   background-color: transparent !important;
   color: inherit !important;
 }
+
+/* 侧边栏底部的中英文订阅图标：在两个 RSS 图标右上角分别叠加 CN / EN 小字，
+   用 aria-label 精确定位（rss-cn / rss-en 来自 _data/contact.yml 的 type）。 */
+.sidebar-bottom a[aria-label^="rss-"] {
+  position: relative;
+}
+.sidebar-bottom a[aria-label="rss-cn"]::after {
+  content: "CN";
+}
+.sidebar-bottom a[aria-label="rss-en"]::after {
+  content: "EN";
+}
+.sidebar-bottom a[aria-label^="rss-"]::after {
+  position: absolute;
+  top: -0.4em;
+  right: -0.7em;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: inherit;
+  opacity: 0.95;
+}
