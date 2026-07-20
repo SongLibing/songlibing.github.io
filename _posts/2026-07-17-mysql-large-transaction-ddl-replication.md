@@ -31,7 +31,7 @@ MySQL官方从MySQL-5.6开始优化复制延迟问题，最先实现了 Schema �
 
 实时复制的核心思想只有一句话：`主库执行开始就把 Binlog Events 或 DDL 发给从库，从库同步执行；主库最终提交或回滚，从库跟着提交或回滚`。
 
-实时复制分为实时传输和实时应用两部分。实时传输将主库上大事务实时产生的 Binlog Events 流式的发送到从库上，这一部分在《[MySQL大事务的Binlog传输优化](/posts/mysql-large-transaction-ddl-replication/》做了介绍。实时应用则是实时的将这些传输过来的 Binlog Events 回放到从库，为此引入了一组额外的回放线程。如下图所示：
+实时复制分为实时传输和实时应用两部分。实时传输将主库上大事务实时产生的 Binlog Events 流式的发送到从库上，这一部分在《[MySQL大事务的Binlog传输优化](/posts/mysql-large-transaction-binlog-transmission-en/）》做了介绍。实时应用则是实时的将这些传输过来的 Binlog Events 回放到从库，为此引入了一组额外的回放线程。如下图所示：
 
 ![](/assets/img/bigtxn-repl-4.webp)
 
