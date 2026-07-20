@@ -33,7 +33,7 @@ The feature has been enabled by default in our RDS service since 2025. To date m
 
 The core idea of realtime replication fits in one sentence: *as soon as the primary starts executing, it ships the binlog events (or DDL) to the replica, which executes them in lockstep; when the primary finally commits or rolls back, the replica does the same.*
 
-Realtime replication has two parts: realtime transmission and realtime application. Realtime transmission streams the binlog events a large transaction produces on the primary to the replica as they are generated; that part is covered in *[Binlog Transmission Optimization for Large MySQL Transactions](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484516&idx=1&sn=096bb73138047bf48187e1d33d892e91&scene=21#wechat_redirect)*. Realtime application replays those events on the replica as they arrive, using a dedicated group of replay threads, as shown below:
+Realtime replication has two parts: realtime transmission and realtime application. Realtime transmission streams the binlog events a large transaction produces on the primary to the replica as they are generated; that part is covered in *[Binlog Transmission Optimization for Large MySQL Transactions](/posts/mysql-large-transaction-binlog-transmission-en/)*. Realtime application replays those events on the replica as they arrive, using a dedicated group of replay threads, as shown below:
 
 ![](/assets/img/bigtxn-repl-4-en.png)
 
