@@ -17,15 +17,15 @@ We adopted the writeset-based replication strategy across our fleet a long time 
 
 ## How Binlog Realtime Replication Works
 
-![](/assets/img/bigtxn-repl-1.webp)
+![](/assets/img/bigtxn-repl-1-en.png)
 
 The cause of replication lag for large transactions and DDL is shown above. Binlog replication works at the granularity of a transaction: only after a transaction finishes are its events written to the binlog file, shipped to the replica, and executed there (a DDL can be viewed as a single transaction). Only once the replica finishes executing can the change become visible to applications. If a transaction takes a long time to run, it takes the same amount of time on the replica, producing lag equal to the replica's execution time. In practice the lag can be even larger: first, a large transaction produces very large binlog events, so there is additional lag from transmission; second, while a large transaction — especially a DDL — is executing, it can block the replay of other transactions, causing more relay log to pile up. After the large transaction or DDL finishes replaying, those piled-up transactions also need time to replay before the replica can catch up.
 
-![](/assets/img/bigtxn-repl-2.webp)
+![](/assets/img/bigtxn-repl-2-en.png)
 
 The idea behind the optimization is intuitive: let the replica start executing the large transaction or DDL at the same time as the primary, and once the primary commits, notify the replica to commit as well. With this mechanism, replication lag for large transactions and DDL can be kept under `1 second`. Below is a comparison of the lag produced by a large transaction before and after the optimization; with realtime replication, large transactions no longer cause replication lag, and neither do DDLs.
 
-![](/assets/img/bigtxn-repl-3.webp)
+![](/assets/img/bigtxn-repl-3-en.jpg)
 
 This feature has been enabled by default in production since 2025. To date more than 3,000 instances have used it, with realtime replication running about 300,000 times for large transactions and about 60,000 times for DDL.
 
@@ -35,7 +35,7 @@ The core idea of realtime replication is a single sentence: `as soon as the prim
 
 Realtime replication has two parts: realtime transmission and realtime application. Realtime transmission streams the binlog events produced by a large transaction on the primary to the replica in real time; this part is described in *[Binlog Transmission Optimization for Large MySQL Transactions](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484516&idx=1&sn=096bb73138047bf48187e1d33d892e91&scene=21#wechat_redirect)*. Realtime application replays those transmitted binlog events on the replica in real time, for which a dedicated group of replay threads is introduced, as shown below:
 
-![](/assets/img/bigtxn-repl-4.webp)
+![](/assets/img/bigtxn-repl-4-en.png)
 
 While a transaction executes on the primary, the binlog events it produces are first buffered in the Binlog Cache. If this is a large transaction (the Binlog Cache size exceeds a threshold), the Dump thread on the primary reads the Binlog Cache temporary file and sends the events directly to the replica. On receiving them, the replica writes them into a dedicated `Brr Cache` (not the relay log file), and a new group of `Brr Worker` threads applies them in real time.
 
@@ -47,7 +47,7 @@ Below we look at how BRR is implemented from both the primary and replica sides.
 
 ### Overall BRR Architecture
 
-![](/assets/img/bigtxn-repl-5.webp)
+![](/assets/img/bigtxn-repl-5-en.jpg)
 
 #### Primary Side
 
@@ -57,7 +57,7 @@ When a large transaction or DDL needs realtime replication, a `Brr_trx` is creat
 
 Realtime transmission reuses the existing Dump channel. To distinguish BRR traffic from ordinary traffic, BRR borrows an idea from Semisync and attaches an extra `BRR Header` to each event; the information in that header tells BRR traffic apart from ordinary replication traffic. To keep BRR events from choking the ordinary binlog-event channel, BRR performs flow control.
 
-![](/assets/img/bigtxn-repl-6.webp)
+![](/assets/img/bigtxn-repl-6-en.png)
 
 #### Replica Side
 
@@ -86,7 +86,7 @@ To this end BRR introduces a new event type, `Brr_gtid_executed_log_event`, whos
 
 ### Realtime Replication of Large Transactions
 
-![](/assets/img/bigtxn-repl-7.webp)
+![](/assets/img/bigtxn-repl-7-en.png)
 
 #### Creating and Updating a Brr_trx
 
@@ -113,7 +113,7 @@ Note that after being killed, the Brr Worker does not exit and does not propagat
 
 ### Realtime Application of DDL
 
-![](/assets/img/bigtxn-repl-8.webp)
+![](/assets/img/bigtxn-repl-8-en.png)
 
 #### Creating a Brr_trx
 
