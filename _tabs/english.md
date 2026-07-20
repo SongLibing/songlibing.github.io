@@ -1,8 +1,8 @@
 ---
 layout: page
-title: English
+title: English Blogs
 icon: fas fa-language
-order: 5
+order: 1
 permalink: /english/
 ---
 
