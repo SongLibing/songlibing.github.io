@@ -57,3 +57,9 @@
   opacity: 0.95;
 }
 
+/* 隐藏导航栏里的 Home（它是 ul.nav 里第一个 li.nav-item）。
+   站点根路径 "/" 仍可访问，只是不在左侧导航显示。English Blogs 因此排在最上面。 */
+#sidebar ul.nav > li.nav-item:first-child {
+  display: none;
+}
+
