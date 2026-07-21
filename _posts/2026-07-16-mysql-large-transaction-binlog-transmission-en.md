@@ -11,7 +11,7 @@ hidden: true
 > This article is also available in Chinese: [中文版](/posts/mysql-large-transaction-binlog-transmission/). Browse [all English articles](/english/).
 {: .prompt-tip }
 
-Large transactions are a pain point in MySQL: they cause not only replication lag but also a host of stability problems. A previous article, *[MySQL Large Transaction Commit Optimization](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)*, covered the problems a large transaction causes at commit time and the optimizations we made in AliSQL. This article looks at the problems a large transaction causes during semi-synchronous replication, and how AliSQL solves them.
+Large transactions are a notorious problem in MySQL: they cause not only replication lag but also stability problems. A previous article, *[MySQL Large Transaction Commit Optimization](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)*, covered the problems a large transaction causes at commit time and the optimizations we made in AliSQL. This article looks at the problems a large transaction causes during semi-synchronous replication, and how AliSQL solves them.
 
 In *[MySQL Large Transaction Commit Optimization](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)* we noted that writing the binlog when a large transaction commits can produce strange slow queries like these:
 
@@ -20,13 +20,13 @@ In *[MySQL Large Transaction Commit Optimization](https://mp.weixin.qq.com/s?__b
 - An `INSERT` that normally runs in an instant took `1.3s`, yet the slow-query log shows no long lock wait.
 - Every statement in a multi-statement transaction had already finished, yet the `COMMIT` alone took `1.3s`.
 
-Besides writing the binlog at commit, transmitting a large transaction's binlog during semi-synchronous replication produces the same symptom. Below is a simulated test: we used sysbench `oltp_write_only` to simulate a normal write workload, then committed, in the background, a transaction that generated 2 GB of binlog events (with the large-transaction commit optimization already applied). When the large transaction commits, writes drop to zero and don't recover until semisync times out.
+Besides writing the binlog at commit, transmitting a large transaction's binlog during semi-synchronous replication produces the same symptom. Below is a simulated test: we used sysbench `oltp_write_only` to simulate a normal write workload, then in the background, a transaction that generated 2 GB of binlog events (with the large-transaction commit optimization already applied). When the large transaction commits, writes drop to zero and don't recover until semisync times out.
 
-![](/assets/img/bigtxn-binlog-2.webp)
+![](/assets/img/bigtxn-binlog-2-en.png)
 
 ## Root Cause
 
-![](/assets/img/bigtxn-binlog-3.webp)
+![](/assets/img/bigtxn-binlog-3-en.png)
 
 The figure above shows the commit flow of a transaction under semi-synchronous replication:
 
@@ -47,7 +47,7 @@ To cope with this, MySQL provides the `rpl_semi_sync_master_timeout` parameter, 
 
 Because a transaction under semi-synchronous replication can't commit until its binlog has been replicated to a replica, it's natural to think of using semisync to build an RPO = 0 (zero data loss) consistency solution.
 
-![](/assets/img/bigtxn-binlog-4.webp)
+![](/assets/img/bigtxn-binlog-4-en.png)
 
 This architecture needs two replicas, and semisync guarantees that a transaction commits only after it receives an ack from at least one of them.
 
@@ -65,11 +65,11 @@ The former can't be controlled from outside — it requires changing MySQL's cod
 
 In AliSQL we designed a realtime-transmission mechanism to solve the problems large-transaction transmission causes; with it, there is no need to degrade semisync to async.
 
-![](/assets/img/bigtxn-binlog-5.webp)
+![](/assets/img/bigtxn-binlog-5-en.png)
 
 The realtime large-transaction transmission mechanism reads a transaction's binlog events out of the Binlog Cache temporary file and sends them to the replica while the transaction is still doing DML. The key steps:
 
-- During DML execution, once the binlog events a transaction has produced exceed a certain amount, the transaction is registered in the large-transaction list and handled as a large transaction.
+- During DML execution, once the binlog events of a transaction has produced exceed a certain amount, the transaction is registered in the large-transaction list and handled as a large transaction.
 - Based on that list, the binlog Dump thread reads the large transaction's binlog temporary file and sends its contents to the replica. The large transaction's binlog events and the events from the binlog file are sent interleaved, with flow control on the large transaction: events from the binlog file take priority, so the transaction currently committing is unaffected.
 - The large transaction's binlog events carry a special marker and extra information. When the replica's IO thread receives them, it stores them in a temporary file called the `Relay Log Cache`.
 - At commit, once the Dump thread has sent all the binlog events, it sends a `Gtid_event` to the replica.
@@ -84,7 +84,7 @@ The realtime-transmission mechanism follows directly from the large-transaction 
 
 Realtime large-transaction transmission reuses this logic, reserving some space at the head of the Relay Log Cache. When the Relay Log Cache is turned into a Relay Log file, that head space is filled with the special binlog events a relay log needs, such as the `Format_description_event`.
 
-![](/assets/img/bigtxn-binlog-6.webp)
+![](/assets/img/bigtxn-binlog-6-en.png)
 
 ### Handling Failures
 
@@ -97,7 +97,7 @@ A large transaction runs for a long time, so any failure along the way has to be
 
 We used sysbench `oltp_write_only` to simulate a normal write workload, then committed, in the background, a transaction that generated 2 GB of binlog events. The results:
 
-![](/assets/img/bigtxn-binlog-7.webp)
+![](/assets/img/bigtxn-binlog-7-en.png)
 
 With realtime replication, the application's writes run smoothly, with no more drops to zero.
 
