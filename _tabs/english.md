@@ -21,7 +21,15 @@ _No English articles yet._
       {{ post.date | date: "%Y-%m-%d" }}
     </div>
     <div style="color: var(--text-muted-color);">
-      {{ post.content | strip_html | truncatewords: 40 }}
+      {%- assign _sum = post.description | default: site.data.summaries[post.slug] -%}
+      {%- if _sum -%}
+        {{ _sum }}
+      {%- else -%}
+        {%- assign _body = post.content -%}
+        {%- assign _parts = post.content | split: '</blockquote>' -%}
+        {%- if _parts.size > 1 -%}{%- assign _body = _parts[1] -%}{%- endif -%}
+        {{ _body | strip_html | strip_newlines | truncatewords: 30 }}
+      {%- endif -%}
     </div>
   </li>
 {% endfor %}
