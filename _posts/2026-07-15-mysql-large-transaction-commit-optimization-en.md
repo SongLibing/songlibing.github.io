@@ -31,7 +31,7 @@ The figure above shows the execution of two transactions:
 - A transaction runs in two phases: an execution phase and a commit phase.
 - During execution, when a statement updates data it generates binlog events. These are stored in the Binlog Cache, which has two parts: an in-memory buffer and a temporary file. When the buffer fills up, the events are written to the temporary file.
 - At commit, all the binlog events in the Binlog Cache are copied into the binlog file.
-- *Writing binlog events to the binlog file must be serialized — one transaction can't do it until the previous one has finished.* So while `Trx_n` is writing to the binlog file, `Trx_m` has to wait.
+- **Writing binlog events to the binlog file must be serialized — one transaction can't do it until the previous one has finished.** So while `Trx_n` is writing to the binlog file, `Trx_m` has to wait.
 - In the figure, `Trx_n` is a large transaction that produced a lot of binlog events. *The time to copy binlog events into the binlog file is linear in the size of the events the transaction produced — the more events, the longer the copy takes.*
 - `Trx_m` is a small transaction. Even though its execution phase finished quickly, at commit it runs into the large transaction `Trx_n` committing, so it must wait for `Trx_n` to finish copying its binlog events before it can proceed. `Trx_m` spends most of its commit phase waiting for `Trx_n` to write the binlog file — and that's why the small transaction becomes slow.
 
