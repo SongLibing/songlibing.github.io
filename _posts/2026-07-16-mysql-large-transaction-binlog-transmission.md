@@ -6,9 +6,9 @@ tags: [MySQL, 复制, Binlog, 大事务, 半同步]
 toc: true
 ---
 
-大事务是MySQL中一个痛点问题， 不仅会带来复制延迟，也会带来大量的稳定性问题。上一篇文章《[MySQL大事务提交优化](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)》介绍了大事务在提交时带来的问题，以及AliSQL中做的技术优化。这篇文章会介绍大事务在`半同步`复制时的问题，以及AliSQL中如何解决这个问题。
+大事务是MySQL中一个痛点问题， 不仅会带来复制延迟，也会带来大量的稳定性问题。上一篇文章《[MySQL大事务提交优化](/posts/mysql-large-transaction-commit-optimization)》介绍了大事务在提交时带来的问题，以及AliSQL中做的技术优化。这篇文章会介绍大事务在`半同步`复制时的问题，以及AliSQL中如何解决这个问题。
 
-在《[MySQL大事务提交优化](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)》中，我们提到大事务提交时写Binlog会导致系统出现如下奇怪的慢SQL。
+在《[MySQL大事务提交优化](/posts/mysql-large-transaction-commit-optimization)》中，我们提到大事务提交时写Binlog会导致系统出现如下奇怪的慢SQL。
 
 ![](/assets/img/bigtxn-binlog-1.webp)
 
