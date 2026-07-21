@@ -20,7 +20,7 @@ If you use and operate MySQL, you've surely run into a strange slow query like t
 
 When this happens, the most likely cause is a large transaction committing. Below is a simulated test: we used sysbench to simulate a normal workload, then ran a large UPDATE in the background every 5 seconds. You can see the large UPDATE severely hurts performance.
 
-![](/assets/img/bigtxn-commit-2.webp)
+![](/assets/img/bigtxn-commit-2-en.png)
 
 ## Root Cause
 
