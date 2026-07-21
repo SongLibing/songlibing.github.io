@@ -11,9 +11,9 @@ hidden: true
 > This article is also available in Chinese: [中文版](/posts/mysql-large-transaction-binlog-transmission/). Browse [all English articles](/english/).
 {: .prompt-tip }
 
-Large transactions are a notorious problem in MySQL: they cause not only replication lag but also stability problems. A previous article, *[MySQL Large Transaction Commit Optimization](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)*, covered the problems a large transaction causes at commit time and the optimizations we made in AliSQL. This article looks at the problems a large transaction causes during semi-synchronous replication, and how AliSQL solves them.
+Large transactions are a notorious problem in MySQL: they cause not only replication lag but also stability problems. A previous article, *[MySQL Large Transaction Commit Optimization](/posts/mysql-large-transaction-commit-optimization)*, covered the problems a large transaction causes at commit time and the optimizations we made in AliSQL. This article looks at the problems a large transaction causes during semi-synchronous replication, and how AliSQL solves them.
 
-In *[MySQL Large Transaction Commit Optimization](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247484449&idx=1&sn=d308f27938b563cb197964fbc2c9b6bd&scene=21#wechat_redirect)* we noted that writing the binlog when a large transaction commits can produce strange slow queries like these:
+In *[MySQL Large Transaction Commit Optimization](/posts/mysql-large-transaction-commit-optimization)* we noted that writing the binlog when a large transaction commits can produce strange slow queries like these:
 
 ![](/assets/img/bigtxn-binlog-1.webp)
 
