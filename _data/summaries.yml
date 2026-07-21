@@ -1,0 +1,18 @@
+# 文章摘要集中管理。
+# key = 文章 slug（文件名去掉日期前缀和 .md 后缀）
+# value = 显示在 English/Chinese Blogs 列表里的一句话摘要（也可用于 SEO）。
+# 想改哪篇的摘要，直接改这里对应的一行即可，不用动文章本身。
+
+# —— 中文 ——
+mysql-jemalloc: 用 Jemalloc 的内存采样和 jeprof 图形化分析，精准定位 MySQL 的内存泄漏与占用问题。
+mysql-caching-sha2-password: 详解 MySQL caching_sha2_password 认证的存储格式、两段式认证与快速/完整认证流程。
+mysql-drop-table-optimization: 剖析删除大表引发的 LRU 扫描与刷脏抖动，并给出 RENAME + DROP 的替代方案。
+mysql-large-transaction-commit-optimization: 把 Binlog Cache 临时文件直接 rename 成 Binlog 文件，消除大事务提交时的拷贝开销与卡顿。
+mysql-large-transaction-binlog-transmission: 半同步复制下大事务传输为何拖慢业务，以及 AliSQL 的实时传输如何在不退化异步的前提下解决。
+mysql-ddl-duplicate-key-problem: 剖析 Online DDL 报 Duplicate Entry 的根因，以及 AliSQL 的真/假重复判定优化。
+mysql-large-transaction-ddl-replication: AliSQL 的 Binlog 实时复制（BRR）让主从并行执行，彻底消除大事务和 DDL 的复制延迟。
+
+# —— English ——
+mysql-large-transaction-commit-optimization-en: Eliminates the copy overhead at commit by renaming the binlog cache file straight into a binlog file.
+mysql-large-transaction-binlog-transmission-en: Why large transactions stall semisync replication, and how AliSQL's realtime transmission fixes it without degrading to async.
+mysql-large-transaction-ddl-replication-en: AliSQL's Binlog Realtime Replication executes on primary and replica in parallel, eliminating lag from large transactions and DDL.
