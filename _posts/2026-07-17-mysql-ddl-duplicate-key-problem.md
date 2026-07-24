@@ -1,5 +1,5 @@
 ---
-title: 'DDL "Duplicate Key" 错误详解'
+title: 'MySQL Online DDL "Duplicate Key" 错误详解'
 date: 2026-07-17 16:30:00 +0800
 categories: [数据库, MySQL]
 tags: [MySQL, DDL, Online DDL, InnoDB]
