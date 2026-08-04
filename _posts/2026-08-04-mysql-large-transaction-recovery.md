@@ -58,7 +58,8 @@ Binlog Recovery 在完成第一部分后即可立即对外提供服务。由于�
 
 在宕机重启时，`Active` 的事务会被 InnoDB 通过后台线程直接回滚掉，不需要 `XID` 来辅助决策。所以恢复时，只要将要回滚的事务的状态从 `Prepared` 改成 `Active`，就能避免两个 Prepared 事务有相同 `XID` 的问题。这里关键是要对 `Active` 的状态做持久化，保证在宕机重启后事务的状态仍然是 `Active`，这样 InnoDB 就会自动将这个事务回滚掉。
 
-社区版的 InnoDB 原本对 Prepared 事务的回滚就是先设置成 `Active` 状态，然后再根据 Undo 记录进行回滚。`Active` 的状态会记录到 Redo 中，只是没有对 Redo 做持久化。然而 InnoDB 默认每秒会做一次 Redo 的持久化，所以在改成 `Active` 后，很快就会被持久化。因此当碰到了大事务回滚造成实例无法启动的情况时，`即使是在社区版本，我们只要强制重启MySQL进程，大事务就会转变成后台回滚，不再阻塞实例的启动`。
+> 社区版的 InnoDB 原本对 Prepared 事务的回滚就是先设置成 `Active` 状态，然后再根据 Undo 记录进行回滚。`Active` 的状态会记录到 Redo 中，只是没有对 Redo 做持久化。然而 InnoDB 默认每秒会做一次 Redo 的持久化，所以在改成 `Active` 后，很快就会被持久化。因此当碰到了大事务回滚造成实例无法启动的情况时，**即使是在社区版本，我们只要强制重启 MySQL 进程，大事务就会转变成后台回滚，不再阻塞实例的启动**。
+{: .prompt-tip }
 
 这个功能的源码贡献给了 MariaDB，已经合并到 MariaDB-11.7 中，详情参考 [MDEV-33853](https://jira.mariadb.org/browse/MDEV-33853)。
 
