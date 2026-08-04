@@ -7,6 +7,9 @@ toc: true
 published: false # TODO: 检查无误后删除这一行即可发布
 ---
 
+> 本文也有英文版：[English version](/posts/mysql-large-transaction-recovery-en/)。
+{: .prompt-tip }
+
 你有没有碰到过 mysqld 进程启动了很长时间也起不来的情况？这时候我们可以用 `perf top` 命令查看一下 MySQL 进程主要在干什么事情。如果你查看到的信息如下图所示，启动过程中 MySQL 的 `主线程(mysqld_main函数开始的线程)` 绝大多数的时间都花在了回滚事务上，那么很可能是遇到了大事务回滚。
 
 ![](/assets/img/bigtxn-recovery-1.webp)
@@ -15,7 +18,7 @@ published: false # TODO: 检查无误后删除这一行即可发布
 
 ## 根因分析
 
-为什么在 MySQL 进程启动时，主线程要做事务回滚的操作呢？这源自于 Binlog 的 Crashsafe 机制，详细的原理可以参考《[MySQL的CrashSafe和Binlog的关系](https://mp.weixin.qq.com/s?__biz=MzIyMTQ1NDE0MQ==&mid=2247483833&idx=1&sn=d96f2994b9dc4d566bbc7ac5a92b3aad&scene=21#wechat_redirect)》，这里只做一个概括的介绍。事务的 DML 执行时会产生 Binlog Events，当事务提交时这些 Binlog Events 会被写入到 Binlog 文件并持久化。为了保证 MySQL 宕机重启后数据和 Binlog 的一致性，MySQL 设计了一个 Crashsafe 的机制。该机制对普通事务采用了两阶段提交（2PC），也称为内部 XA（Internal XA）。
+为什么在 MySQL 进程启动时，主线程要做事务回滚的操作呢？这源自于 Binlog 的 Crashsafe 机制，这里只做一个概括的介绍。事务的 DML 执行时会产生 Binlog Events，当事务提交时这些 Binlog Events 会被写入到 Binlog 文件并持久化。为了保证 MySQL 宕机重启后数据和 Binlog 的一致性，MySQL 设计了一个 Crashsafe 的机制。该机制对普通事务采用了两阶段提交（2PC），也称为内部 XA（Internal XA）。
 
 ![](/assets/img/bigtxn-recovery-2.webp)
 
