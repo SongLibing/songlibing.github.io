@@ -11,8 +11,11 @@ mysql-large-transaction-commit-optimization: 把 Binlog Cache 临时文件直接
 mysql-large-transaction-binlog-transmission: 半同步复制下大事务传输为何拖慢业务，以及 AliSQL 的实时传输如何在不退化异步的前提下解决。
 mysql-ddl-duplicate-key-problem: 剖析 Online DDL 报 Duplicate Entry 的根因，以及 AliSQL 的真/假重复判定优化。
 mysql-large-transaction-ddl-replication: AliSQL 的 Binlog 实时复制（BRR）让主从并行执行，彻底消除大事务和 DDL 的复制延迟。
+mysql-large-transaction-recovery: Binlog Recovery 必须在实例对外服务前回滚 Prepared 的大事务，AliSQL 的异步回滚把启动时间从小时级缩短到秒级。
 
 # —— English ——
 mysql-large-transaction-commit-optimization-en: Eliminates the copy overhead at commit by renaming the binlog cache file straight into a binlog file.
 mysql-large-transaction-binlog-transmission-en: Why large transactions stall semisync replication, and how AliSQL's realtime transmission fixes it without degrading to async.
 mysql-large-transaction-ddl-replication-en: AliSQL's Binlog Realtime Replication executes on primary and replica in parallel, eliminating lag from large transactions and DDL.
+mysql-large-transaction-recovery-en: Binlog Recovery must roll back prepared large transactions before the server can serve users; AliSQL's asynchronous rollback cuts startup from hours to seconds.
+
