@@ -4,7 +4,6 @@ date: 2026-08-04 10:00:00 +0800
 categories: [数据库, MySQL]
 tags: [MySQL, 大事务, Recovery, Binlog, InnoDB]
 toc: true
-published: false # TODO: 检查无误后删除这一行即可发布
 ---
 
 > 本文也有英文版：[English version](/posts/mysql-large-transaction-recovery-en/)。
