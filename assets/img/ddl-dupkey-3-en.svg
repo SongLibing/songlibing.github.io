@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="470" viewBox="0 0 740 470" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/>
+    </marker>
+    <marker id="arwG" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arwA" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#d97706"/>
+    </marker>
+    <marker id="arwR" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="740" height="470" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <text x="370" y="26" text-anchor="middle" font-size="16.5" font-weight="700" fill="#0f172a">Spurious Duplicate: a Rolled-Back Concurrent INSERT Trips Duplicate Key</text>
+  <text x="370" y="45" text-anchor="middle" font-size="10.5" fill="#475569">DML writes the row log (left), DDL replays it (right); the duplicate is hit replaying ROW_T_INSERT, before ROW_T_DELETE arrives</text>
+
+  <!-- setup info (full width) -->
+  <rect x="20" y="58" width="700" height="34" rx="8" fill="#eaf1fe" stroke="#3b73e0" stroke-width="1.3"/>
+  <text x="370" y="79" text-anchor="middle" font-size="10.5" fill="#17356b">Setup: committed row R0(pk0, c=5) is already copied into the new table, which carries unique index uk_c(c) — uk_c already holds c=5</text>
+
+  <!-- ===== lane backgrounds ===== -->
+  <rect x="20" y="108" width="235" height="245" rx="12" fill="#eef4fb" stroke="#cdddf2" stroke-width="1.3"/>
+  <text x="32" y="127" font-size="12.5" font-weight="700" fill="#3b5b8c">① DML phase (old table t)</text>
+
+  <rect x="485" y="108" width="235" height="245" rx="12" fill="#f5eefb" stroke="#e0cdf0" stroke-width="1.3"/>
+  <text x="497" y="127" font-size="12.5" font-weight="700" fill="#6b3b8c">② DDL replay phase (new table)</text>
+
+  <text x="370" y="126" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7c4a04">Row Log (write order ↓)</text>
+
+  <!-- ===== DML column (left) ===== -->
+  <rect x="30" y="140" width="215" height="54" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="137" y="161" text-anchor="middle" font-size="13" font-weight="600" fill="#14532d">INSERT (pk1, c=5)</text>
+  <text x="137" y="179" text-anchor="middle" font-size="11" fill="#3f6b52">clustered B+tree insert OK ✓</text>
+
+  <rect x="30" y="210" width="215" height="54" rx="8" fill="#fdecec" stroke="#dc2626" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="137" y="231" text-anchor="middle" font-size="13" font-weight="600" fill="#7f1d1d">insert into uk_c (c=5)</text>
+  <text x="137" y="249" text-anchor="middle" font-size="10.5" fill="#9b2c2c">clashes with R0 → DML fails ✗</text>
+
+  <rect x="30" y="282" width="215" height="54" rx="8" fill="#fff4d6" stroke="#f59e0b" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="137" y="303" text-anchor="middle" font-size="13" font-weight="600" fill="#8a5a00">DML rollback</text>
+  <text x="137" y="321" text-anchor="middle" font-size="11" fill="#a06a12">undo the clustered record</text>
+
+  <line x1="137" y1="194" x2="137" y2="209" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="137" y1="264" x2="137" y2="281" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+
+  <!-- ===== Row Log (middle) ===== -->
+  <path d="M280,140 L440,140 L460,160 L460,192 L280,192 Z" fill="#f0faf4" stroke="#2e9e5b" stroke-width="1.4" filter="url(#sh)"/>
+  <path d="M440,140 L440,160 L460,160 Z" fill="#d6f0e0" stroke="#2e9e5b" stroke-width="1.4"/>
+  <text x="366" y="166" text-anchor="middle" font-size="10.5" font-weight="700" font-family="monospace" fill="#14532d">① ⟨ROW_T_INSERT, pk1, c=5⟩</text>
+  <text x="366" y="182" text-anchor="middle" font-size="9.5" fill="#3f6b52">written on clustered insert</text>
+
+  <path d="M280,282 L440,282 L460,302 L460,334 L280,334 Z" fill="#fdf0f0" stroke="#dc2626" stroke-width="1.4" filter="url(#sh)"/>
+  <path d="M440,282 L440,302 L460,302 Z" fill="#f7d6d6" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="366" y="308" text-anchor="middle" font-size="10.5" font-weight="700" font-family="monospace" fill="#7f1d1d">② ⟨ROW_T_DELETE, pk1⟩</text>
+  <text x="366" y="324" text-anchor="middle" font-size="9.5" fill="#9b2c2c">written on rollback undo</text>
+
+  <line x1="370" y1="192" x2="370" y2="281" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#arwG)"/>
+
+  <!-- write connectors: DML -> row log -->
+  <line x1="245" y1="167" x2="278" y2="167" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="262" y="160" text-anchor="middle" font-size="9.5" fill="#b45309">write</text>
+  <line x1="245" y1="309" x2="278" y2="309" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="262" y="302" text-anchor="middle" font-size="9.5" fill="#b45309">write</text>
+
+  <!-- read connectors: row log -> DDL -->
+  <line x1="462" y1="167" x2="493" y2="167" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="478" y="160" text-anchor="middle" font-size="9.5" fill="#b45309">read</text>
+  <line x1="462" y1="309" x2="493" y2="309" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="478" y="302" text-anchor="middle" font-size="9.5" fill="#b45309">read</text>
+
+  <!-- ===== DDL column (right) ===== -->
+  <rect x="495" y="140" width="215" height="54" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="602" y="161" text-anchor="middle" font-size="11" font-weight="600" fill="#14532d">replay ① ROW_T_INSERT(pk1,c=5)</text>
+  <text x="602" y="179" text-anchor="middle" font-size="11" fill="#3f6b52">clustered insert of pk1 OK ✓</text>
+
+  <rect x="495" y="208" width="215" height="58" rx="8" fill="#fdecec" stroke="#dc2626" stroke-width="2.5" filter="url(#sh)"/>
+  <text x="602" y="231" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7f1d1d">uk_c(c=5) clashes with R0 again</text>
+  <text x="602" y="250" text-anchor="middle" font-size="10" fill="#9b2c2c">duplicate recorded → error / corrupted ✗</text>
+
+  <rect x="495" y="282" width="215" height="54" rx="8" fill="#fff4d6" stroke="#f59e0b" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="602" y="303" text-anchor="middle" font-size="11.5" font-weight="600" fill="#8a5a00">replay ② ROW_T_DELETE(pk1)</text>
+  <text x="602" y="321" text-anchor="middle" font-size="10.5" fill="#a06a12">cancels the data, not the duplicate</text>
+
+  <line x1="602" y1="194" x2="602" y2="207" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="602" y1="266" x2="602" y2="281" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+
+  <!-- DDL -> result -->
+  <line x1="602" y1="336" x2="602" y2="370" stroke="#dc2626" stroke-width="1.8" marker-end="url(#arwR)"/>
+
+  <!-- ===== Result ===== -->
+  <rect x="20" y="372" width="700" height="66" rx="10" fill="#fdecec" stroke="#dc2626" stroke-width="1.8" filter="url(#sh)"/>
+  <text x="370" y="394" text-anchor="middle" font-size="14" font-weight="700" fill="#b91c1c">✗ DDL fails: Duplicate entry</text>
+  <text x="370" y="414" text-anchor="middle" font-size="11.5" fill="#7f1d1d">Yet only R0 is committed — there is no real duplicate. This is the “spurious duplicate”:</text>
+  <text x="370" y="430" text-anchor="middle" font-size="11.5" fill="#7f1d1d">one already-rolled-back concurrent INSERT can bring down the entire online DDL.</text>
+
+  <text x="370" y="458" text-anchor="middle" font-size="10.5" fill="#94a3b8">InnoDB · table-rebuild online DDL (ROW_T_INSERT replay) · same in MySQL 5.7 and 8.0</text>
+</svg>
