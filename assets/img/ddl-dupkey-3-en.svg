@@ -74,8 +74,6 @@
   <!-- read connectors: row log -> DDL -->
   <line x1="462" y1="167" x2="493" y2="167" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
   <text x="478" y="160" text-anchor="middle" font-size="9.5" fill="#b45309">read</text>
-  <line x1="462" y1="309" x2="493" y2="309" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
-  <text x="478" y="302" text-anchor="middle" font-size="9.5" fill="#b45309">read</text>
 
   <!-- ===== DDL column (right) ===== -->
   <rect x="495" y="140" width="215" height="54" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.5" filter="url(#sh)"/>
@@ -86,15 +84,10 @@
   <text x="602" y="231" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7f1d1d">uk_c(c=5) clashes with R0 again</text>
   <text x="602" y="250" text-anchor="middle" font-size="10" fill="#9b2c2c">duplicate recorded → error / corrupted ✗</text>
 
-  <rect x="495" y="282" width="215" height="54" rx="8" fill="#fff4d6" stroke="#f59e0b" stroke-width="1.6" filter="url(#sh)"/>
-  <text x="602" y="303" text-anchor="middle" font-size="11.5" font-weight="600" fill="#8a5a00">replay ② ROW_T_DELETE(pk1)</text>
-  <text x="602" y="321" text-anchor="middle" font-size="10.5" fill="#a06a12">cancels the data, not the duplicate</text>
-
   <line x1="602" y1="194" x2="602" y2="207" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
-  <line x1="602" y1="266" x2="602" y2="281" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
 
   <!-- DDL -> result -->
-  <line x1="602" y1="336" x2="602" y2="370" stroke="#dc2626" stroke-width="1.8" marker-end="url(#arwR)"/>
+  <line x1="602" y1="268" x2="602" y2="370" stroke="#dc2626" stroke-width="1.8" marker-end="url(#arwR)"/>
 
   <!-- ===== Result ===== -->
   <rect x="20" y="372" width="700" height="66" rx="10" fill="#fdecec" stroke="#dc2626" stroke-width="1.8" filter="url(#sh)"/>
