@@ -91,7 +91,7 @@ Row log 是对一个 B+tree 上数据页变化的记录，分两种情形：
 
 这里要特别注意 row log 记录的时机。Row log 记录的是 B+tree 上的变化，所以是在一个 B+tree 的操作成功后记录的。如下图所示:`重建表场景下，当 clustered B+tree 插入成功后会记录 row log。在添加索引场景下，则是在 secondary index B+tree 插入时记录的。`添加索引的场景下不会真正的往 B+tree 上插入记录，只是记录一下 row log。
 
-![](/assets/img/ddl-dupkey-1.webp)
+![](/assets/img/ddl-dupkey-1.svg)
 
 ### DML 回滚场景
 
@@ -101,7 +101,7 @@ Row log 是对一个 B+tree 上数据页变化的记录，分两种情形：
 
 • 其次， DML 语句会回滚。DML 回滚时，会根据 undo log 的内容，再一次操作 B+tree, 这一次的操作同样也会记录到 row log 中。因此一个失败的 INSERT 会记录两条 row log，一条是 ROW\_T\_INSERT, 一条是 ROW\_T\_DELETE，如下图所示。 两条 row log 按顺序执行后就相当于没有产生这条记录，符合回滚预期。
 
-![](/assets/img/ddl-dupkey-2.webp)
+![](/assets/img/ddl-dupkey-2.svg)
 
 失败导致回滚只是其中一个特例，实际上所有的回滚操作都是这样的逻辑，包括用户手动执行 `ROLLBACK`。
 
@@ -118,7 +118,7 @@ Row log 的回放一共执行两次：
 
 在前面的`DML 回滚场景`中介绍了 INSERT 时即使 Unique Index 上发生了`Duplicate Entry`错误，也会记录 row log，而且记录的是两条。如下图所示：
 
-![](/assets/img/ddl-dupkey-3.webp)
+![](/assets/img/ddl-dupkey-3.svg)
 
 在回放第一条 row log`ROW_T_INSERT`时，和 INSERT 语句的执行逻辑是一样。要先插入一行记录到 clustered B+tree，然后到每个索引上插入一条记录。因此当向唯一索引插入这条记录时，同样也会报`Duplicate Entry`的错误。正是这个 duplicate entry 导致了 DDL 语句的失败。
 
@@ -166,11 +166,11 @@ ERROR 1062 (23000): Duplicate entry '1' for key 't1.c2'
 
 通过 performance\_schema 的 metadata\_locks 表可以看到这些 session 上的metadata locks。如下图所示：其中第一行是 Session 1 持有的锁。
 
-![](/assets/img/ddl-dupkey-4.webp)
+![](/assets/img/ddl-dupkey-en-4.png)
 
 当 Session 1 的事务提交后， Session 2 获得`MDL_EXCLUSIVE`lock，执行完 prepare 阶段后，降级到`MDL_SHARED_UPGRADABLE`lock。这个锁和`MDL_SHARED_WRITE`不冲突，所以 Session 3 获得了`MDL_SHARED_WRITE`开始执行。执行的过程中因为`c2 = 1`已经存在，就报了`Duplicate key`的错误。这个过程中记录了 row log，因此也导致了 Session 2 ALTER 语句的错误。
 
-![](/assets/img/ddl-dupkey-5.webp)
+![](/assets/img/ddl-dupkey-5.svg)
 
 ### 如何避免这个问题
 
@@ -203,7 +203,7 @@ Row Log 回放时，往唯一索引 B+tree 上插入数据失败，被忽略掉�
 
 因此当遇到已经存在的唯一索引上的`Duplicate Entry`错误时，我们需要将这个错误记录下来。当回放回滚产生的 row log 时，同样也跳过这个索引上的操作。如下图所示：
 
-![](/assets/img/ddl-dupkey-6.webp)
+![](/assets/img/ddl-dupkey-6.svg)
 
 UPDATE 的情况会更加复杂，如果一个 UPDATE 修改了一个二级索引列，要在二级索引上执行两个操作：
 
@@ -212,7 +212,7 @@ UPDATE 的情况会更加复杂，如果一个 UPDATE 修改了一个二级索�
 
 回放 row log 时的失败发生在第 2 步，因此执行后续的回滚操作时就不能简单的跳过这个索引上的所有操作，而是要跳过第1步，第2步还要执行, 如下图所示：
 
-![](/assets/img/ddl-dupkey-7.webp)
+![](/assets/img/ddl-dupkey-7.svg)
 
 通过以上的设计，AliSQL 避免了 Online DDL 时不必须要的`Duplicate Entry`错误。
 
