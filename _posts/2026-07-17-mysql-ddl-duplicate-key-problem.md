@@ -166,7 +166,7 @@ ERROR 1062 (23000): Duplicate entry '1' for key 't1.c2'
 
 通过 performance\_schema 的 metadata\_locks 表可以看到这些 session 上的metadata locks。如下图所示：其中第一行是 Session 1 持有的锁。
 
-![](/assets/img/ddl-dupkey-en-4.png)
+![](/assets/img/ddl-dupkey-4-en.png)
 
 当 Session 1 的事务提交后， Session 2 获得`MDL_EXCLUSIVE`lock，执行完 prepare 阶段后，降级到`MDL_SHARED_UPGRADABLE`lock。这个锁和`MDL_SHARED_WRITE`不冲突，所以 Session 3 获得了`MDL_SHARED_WRITE`开始执行。执行的过程中因为`c2 = 1`已经存在，就报了`Duplicate key`的错误。这个过程中记录了 row log，因此也导致了 Session 2 ALTER 语句的错误。
 
