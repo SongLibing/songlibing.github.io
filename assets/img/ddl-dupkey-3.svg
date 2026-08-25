@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="470" viewBox="0 0 740 470" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC','Helvetica Neue',sans-serif">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/>
+    </marker>
+    <marker id="arwG" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arwA" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#d97706"/>
+    </marker>
+    <marker id="arwR" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="740" height="470" fill="#f8fafc"/>
+
+  <!-- Title -->
+  <text x="370" y="26" text-anchor="middle" font-size="16.5" font-weight="700" fill="#0f172a">伪重复：一个已回滚的并发 INSERT 让 Online DDL 报 Duplicate Key</text>
+  <text x="370" y="45" text-anchor="middle" font-size="11" fill="#475569">DML 写 row log（左）→ DDL 回放（右）；ROW_T_INSERT 先于 ROW_T_DELETE，重复在插入这一步就被记下</text>
+
+  <!-- setup info (full width) -->
+  <rect x="20" y="58" width="700" height="34" rx="8" fill="#eaf1fe" stroke="#3b73e0" stroke-width="1.3"/>
+  <text x="370" y="79" text-anchor="middle" font-size="11.5" fill="#17356b">前置：已提交行 R0(pk0, c=5) 已被全量拷贝进新表；新表带唯一索引 uk_c(c) —— 此刻新表 uk_c 已有 c=5（来自 R0）</text>
+
+  <!-- ===== lane backgrounds ===== -->
+  <rect x="20" y="108" width="235" height="245" rx="12" fill="#eef4fb" stroke="#cdddf2" stroke-width="1.3"/>
+  <text x="32" y="127" font-size="12.5" font-weight="700" fill="#3b5b8c">① DML 阶段（旧表 t）</text>
+
+  <rect x="485" y="108" width="235" height="245" rx="12" fill="#f5eefb" stroke="#e0cdf0" stroke-width="1.3"/>
+  <text x="497" y="127" font-size="12.5" font-weight="700" fill="#6b3b8c">② DDL 回放阶段（新表）</text>
+
+  <text x="370" y="126" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7c4a04">Row Log（写入顺序 ↓）</text>
+
+  <!-- ===== DML column (left) ===== -->
+  <rect x="30" y="140" width="215" height="54" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="137" y="161" text-anchor="middle" font-size="13" font-weight="600" fill="#14532d">INSERT (pk1, c=5)</text>
+  <text x="137" y="179" text-anchor="middle" font-size="11" fill="#3f6b52">插聚簇 B+tree 成功 ✓</text>
+
+  <rect x="30" y="210" width="215" height="54" rx="8" fill="#fdecec" stroke="#dc2626" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="137" y="231" text-anchor="middle" font-size="13" font-weight="600" fill="#7f1d1d">插 uk_c(c=5)</text>
+  <text x="137" y="249" text-anchor="middle" font-size="10.5" fill="#9b2c2c">与 R0 撞唯一键 → DML 失败 ✗</text>
+
+  <rect x="30" y="282" width="215" height="54" rx="8" fill="#fff4d6" stroke="#f59e0b" stroke-width="1.6" filter="url(#sh)"/>
+  <text x="137" y="303" text-anchor="middle" font-size="13" font-weight="600" fill="#8a5a00">DML 回滚</text>
+  <text x="137" y="321" text-anchor="middle" font-size="11" fill="#a06a12">撤销聚簇记录</text>
+
+  <line x1="137" y1="194" x2="137" y2="209" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="137" y1="264" x2="137" y2="281" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+
+  <!-- ===== Row Log (middle) ===== -->
+  <path d="M280,140 L440,140 L460,160 L460,192 L280,192 Z" fill="#f0faf4" stroke="#2e9e5b" stroke-width="1.4" filter="url(#sh)"/>
+  <path d="M440,140 L440,160 L460,160 Z" fill="#d6f0e0" stroke="#2e9e5b" stroke-width="1.4"/>
+  <text x="366" y="166" text-anchor="middle" font-size="10.5" font-weight="700" font-family="monospace" fill="#14532d">① ⟨ROW_T_INSERT, pk1, c=5⟩</text>
+  <text x="366" y="182" text-anchor="middle" font-size="9.5" fill="#3f6b52">聚簇插入成功时写入</text>
+
+  <path d="M280,282 L440,282 L460,302 L460,334 L280,334 Z" fill="#fdf0f0" stroke="#dc2626" stroke-width="1.4" filter="url(#sh)"/>
+  <path d="M440,282 L440,302 L460,302 Z" fill="#f7d6d6" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="366" y="308" text-anchor="middle" font-size="10.5" font-weight="700" font-family="monospace" fill="#7f1d1d">② ⟨ROW_T_DELETE, pk1⟩</text>
+  <text x="366" y="324" text-anchor="middle" font-size="9.5" fill="#9b2c2c">回滚撤销时写入</text>
+
+  <line x1="370" y1="192" x2="370" y2="281" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#arwG)"/>
+
+  <!-- write connectors: DML -> row log -->
+  <line x1="245" y1="167" x2="278" y2="167" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="262" y="160" text-anchor="middle" font-size="9.5" fill="#b45309">写</text>
+  <line x1="245" y1="309" x2="278" y2="309" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="262" y="302" text-anchor="middle" font-size="9.5" fill="#b45309">写</text>
+
+  <!-- read connectors: row log -> DDL -->
+  <line x1="462" y1="167" x2="493" y2="167" stroke="#d97706" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwA)"/>
+  <text x="478" y="160" text-anchor="middle" font-size="9.5" fill="#b45309">读</text>
+
+  <!-- ===== DDL column (right) ===== -->
+  <rect x="495" y="140" width="215" height="54" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="602" y="161" text-anchor="middle" font-size="11" font-weight="600" fill="#14532d">回放 ① ROW_T_INSERT(pk1,c=5)</text>
+  <text x="602" y="179" text-anchor="middle" font-size="11" fill="#3f6b52">插聚簇 pk1 成功 ✓</text>
+
+  <rect x="495" y="208" width="215" height="58" rx="8" fill="#fdecec" stroke="#dc2626" stroke-width="2.5" filter="url(#sh)"/>
+  <text x="602" y="231" text-anchor="middle" font-size="12" font-weight="700" fill="#7f1d1d">插 uk_c(c=5) 又撞 R0</text>
+  <text x="602" y="250" text-anchor="middle" font-size="10" fill="#9b2c2c">记下重复：报错 / 标 corrupted ✗</text>
+
+  <line x1="602" y1="194" x2="602" y2="207" stroke="#64748b" stroke-width="1.6" marker-end="url(#arw)"/>
+
+  <!-- DDL -> result -->
+  <line x1="602" y1="268" x2="602" y2="370" stroke="#dc2626" stroke-width="1.8" marker-end="url(#arwR)"/>
+
+  <!-- ===== Result ===== -->
+  <rect x="20" y="372" width="700" height="66" rx="10" fill="#fdecec" stroke="#dc2626" stroke-width="1.8" filter="url(#sh)"/>
+  <text x="370" y="398" text-anchor="middle" font-size="14" font-weight="700" fill="#b91c1c">✗ DDL 失败：Duplicate entry</text>
+  <text x="370" y="420" text-anchor="middle" font-size="11.5" fill="#7f1d1d">但最终已提交数据只有 R0、并无重复 —— 这是“伪重复”：一个已经回滚的并发 INSERT，就能让整个 Online DDL 失败</text>
+
+  <text x="370" y="458" text-anchor="middle" font-size="10.5" fill="#94a3b8">InnoDB · 重建表 Online DDL（ROW_T_INSERT 回放）· MySQL-5.7 / 8.0 一致</text>
+</svg>

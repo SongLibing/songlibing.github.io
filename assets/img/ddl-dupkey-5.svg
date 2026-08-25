@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="750" viewBox="0 0 940 750" font-family="'PingFang SC','Microsoft YaHei','Noto Sans CJK SC','Helvetica Neue',sans-serif">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arwR" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#dc2626"/></marker>
+    <marker id="arwG" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#16a34a"/></marker>
+    <marker id="arwA" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#d97706"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="940" height="750" fill="#f8fafc"/>
+
+  <text x="470" y="26" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a">用 MDL 阻塞链构造 Online DDL 的 Duplicate Key（3 会话，确定性复现）</text>
+  <text x="470" y="45" text-anchor="middle" font-size="11.5" fill="#475569">表 t1(c1, c2)，UNIQUE KEY(c2)，初始为空。Session 1 提交后，Session 2(ALTER) 与 Session 3(INSERT) 都报 Duplicate</text>
+  <text x="470" y="63" text-anchor="middle" font-size="10.5" fill="#64748b"><tspan font-weight="700" fill="#4338ca">SW</tspan> = MDL_SHARED_WRITE（表级 DML 锁）· <tspan font-weight="700" fill="#b91c1c">X</tspan> = MDL_EXCLUSIVE · <tspan font-weight="700" fill="#b45309">SU</tspan> = MDL_SHARED_UPGRADABLE</text>
+
+  <!-- lane headers -->
+  <rect x="50" y="76" width="250" height="48" rx="8" fill="#eaf1fe" stroke="#3b73e0" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="175" y="94" text-anchor="middle" font-size="12.5" font-weight="700" fill="#17356b">Session 1 · DML</text>
+  <text x="175" y="112" text-anchor="middle" font-size="10.5" font-family="monospace" fill="#334155">BEGIN; INSERT t1 VALUES(1,1);</text>
+
+  <rect x="345" y="76" width="250" height="48" rx="8" fill="#f6eefe" stroke="#9333ea" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="470" y="94" text-anchor="middle" font-size="12.5" font-weight="700" fill="#4a1d7a">Session 2 · Online DDL</text>
+  <text x="470" y="112" text-anchor="middle" font-size="10" font-family="monospace" fill="#334155">ALTER TABLE t1 ENGINE=InnoDB;</text>
+
+  <rect x="640" y="76" width="250" height="48" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="765" y="94" text-anchor="middle" font-size="12.5" font-weight="700" fill="#14532d">Session 3 · DML</text>
+  <text x="765" y="112" text-anchor="middle" font-size="10.5" font-family="monospace" fill="#334155">INSERT t1 VALUES(2,1);</text>
+
+  <!-- lifelines -->
+  <line x1="175" y1="124" x2="175" y2="622" stroke="#3b73e0" stroke-width="1" stroke-dasharray="3,4" opacity="0.45"/>
+  <line x1="470" y1="124" x2="470" y2="622" stroke="#9333ea" stroke-width="1" stroke-dasharray="3,4" opacity="0.45"/>
+  <line x1="765" y1="124" x2="765" y2="622" stroke="#2e9e5b" stroke-width="1" stroke-dasharray="3,4" opacity="0.45"/>
+
+  <!-- ===== Phase 1 ===== -->
+  <text x="50" y="146" font-size="12" font-weight="700" fill="#334155">① Session 1 未提交 —— 形成 MDL 阻塞链</text>
+  <rect x="60" y="160" width="230" height="48" rx="8" fill="#eaf1fe" stroke="#3b73e0" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="175" y="179" text-anchor="middle" font-size="12" font-weight="600" fill="#17356b">写入 (1,1)</text>
+  <text x="175" y="196" text-anchor="middle" font-size="10.5" fill="#3730a3">持有表锁 <tspan font-weight="700">SW</tspan>（未提交，不释放）</text>
+
+  <rect x="355" y="160" width="230" height="48" rx="8" fill="#f6eefe" stroke="#9333ea" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="470" y="179" text-anchor="middle" font-size="12" font-weight="600" fill="#4a1d7a">prepare 申请 <tspan fill="#b91c1c" font-weight="700">X</tspan></text>
+  <text x="470" y="196" text-anchor="middle" font-size="10.5" fill="#b91c1c">被 S1 挡住 · 等待</text>
+
+  <rect x="650" y="160" width="230" height="48" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="765" y="179" text-anchor="middle" font-size="12" font-weight="600" fill="#14532d">INSERT 申请 <tspan fill="#4338ca" font-weight="700">SW</tspan></text>
+  <text x="765" y="196" text-anchor="middle" font-size="10.5" fill="#b91c1c">被 S2 挡住 · 等待</text>
+
+  <line x1="290" y1="184" x2="353" y2="184" stroke="#dc2626" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwR)"/>
+  <text x="321" y="177" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">阻塞</text>
+  <line x1="585" y1="184" x2="648" y2="184" stroke="#dc2626" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwR)"/>
+  <text x="616" y="177" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">阻塞</text>
+
+  <!-- trigger -->
+  <line x1="50" y1="228" x2="890" y2="228" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,3"/>
+  <rect x="330" y="216" width="280" height="23" rx="11" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/>
+  <text x="470" y="232" text-anchor="middle" font-size="11.5" font-weight="700" fill="#15803d">▼ 提交 Session 1 的事务（COMMIT）▼</text>
+
+  <!-- ===== Phase 2 ===== -->
+  <text x="50" y="262" font-size="12" font-weight="700" fill="#334155">② COMMIT 后 —— MDL 级联放行（X 优先获得，prepare 后降级 SU）</text>
+  <rect x="60" y="276" width="230" height="52" rx="8" fill="#eaf1fe" stroke="#3b73e0" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="175" y="296" text-anchor="middle" font-size="12" font-weight="600" fill="#17356b">COMMIT</text>
+  <text x="175" y="314" text-anchor="middle" font-size="10.5" fill="#334155">释放 <tspan font-weight="700" fill="#3730a3">SW</tspan>；(1,1) 提交，c2=1 存在</text>
+
+  <rect x="355" y="276" width="230" height="52" rx="8" fill="#f6eefe" stroke="#9333ea" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="470" y="296" text-anchor="middle" font-size="11.5" font-weight="600" fill="#4a1d7a">获 <tspan fill="#b91c1c" font-weight="700">X</tspan> → prepare（建 row log）</text>
+  <text x="470" y="314" text-anchor="middle" font-size="10.5" fill="#334155">→ 降级为 <tspan font-weight="700" fill="#b45309">SU</tspan></text>
+
+  <rect x="650" y="276" width="230" height="52" rx="8" fill="#eafaf0" stroke="#2e9e5b" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="765" y="296" text-anchor="middle" font-size="11" font-weight="600" fill="#14532d"><tspan font-weight="700" fill="#b45309">SU</tspan> 不冲突 <tspan font-weight="700" fill="#4338ca">SW</tspan> → 获 <tspan font-weight="700" fill="#4338ca">SW</tspan></text>
+  <text x="765" y="314" text-anchor="middle" font-size="10.5" fill="#334155">→ 执行 INSERT(2,1)</text>
+
+  <line x1="290" y1="302" x2="353" y2="302" stroke="#16a34a" stroke-width="1.7" marker-end="url(#arwG)"/>
+  <text x="321" y="295" text-anchor="middle" font-size="9.5" font-weight="700" fill="#15803d">放行</text>
+  <line x1="585" y1="302" x2="648" y2="302" stroke="#16a34a" stroke-width="1.7" marker-end="url(#arwG)"/>
+  <text x="616" y="295" text-anchor="middle" font-size="9.5" font-weight="700" fill="#15803d">放行</text>
+
+  <!-- ===== Phase 3 ===== -->
+  <text x="50" y="356" font-size="12" font-weight="700" fill="#334155">③ 冲突 + 反向阻塞 —— S2 升 X 时被 S3 挡住</text>
+
+  <rect x="355" y="370" width="230" height="48" rx="8" fill="#f6eefe" stroke="#9333ea" stroke-width="1.4" filter="url(#sh)"/>
+  <text x="470" y="389" text-anchor="middle" font-size="11.5" font-weight="600" fill="#4a1d7a">commit：升 <tspan fill="#b45309" font-weight="700">SU</tspan> → <tspan fill="#b91c1c" font-weight="700">X</tspan></text>
+  <text x="470" y="406" text-anchor="middle" font-size="10.5" fill="#b91c1c">被 S3 的 <tspan font-weight="700">SW</tspan> 阻塞 · 等待</text>
+
+  <rect x="650" y="370" width="230" height="48" rx="8" fill="#fdf0f0" stroke="#dc2626" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="765" y="389" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7f1d1d">INSERT(2,1)：c2=1 已存在</text>
+  <text x="765" y="406" text-anchor="middle" font-size="10.5" fill="#9b2c2c">→ Duplicate，且已写 row log</text>
+
+  <line x1="648" y1="394" x2="587" y2="394" stroke="#dc2626" stroke-width="1.7" stroke-dasharray="5,3" marker-end="url(#arwR)"/>
+  <text x="617" y="387" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">阻塞</text>
+
+  <line x1="765" y1="418" x2="765" y2="432" stroke="#dc2626" stroke-width="1.6" marker-end="url(#arwR)"/>
+  <rect x="650" y="434" width="230" height="40" rx="7" fill="#fdecec" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="765" y="451" text-anchor="middle" font-size="11.5" font-weight="700" fill="#b91c1c">✗ Session 3：ERROR 1062</text>
+  <text x="765" y="467" text-anchor="middle" font-size="10" font-family="monospace" fill="#7f1d1d">Duplicate entry '1' for key 't1.c2'</text>
+
+  <!-- ===== Phase 4 ===== -->
+  <text x="50" y="502" font-size="12" font-weight="700" fill="#334155">④ S3 报错回滚（释放 SW）→ S2 获 X，apply row log 失败</text>
+
+  <path d="M765,474 L765,492 L500,492 L500,516" fill="none" stroke="#16a34a" stroke-width="1.7" marker-end="url(#arwG)"/>
+  <text x="628" y="486" text-anchor="middle" font-size="10" font-weight="700" fill="#15803d">S3 回滚 → 释放 SW ⇒ S2 升级 X 成功</text>
+
+  <rect x="355" y="518" width="230" height="50" rx="8" fill="#fdf0f0" stroke="#dc2626" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="470" y="538" text-anchor="middle" font-size="11.5" font-weight="600" fill="#7f1d1d">获 <tspan fill="#b91c1c" font-weight="700">X</tspan> → apply row log</text>
+  <text x="470" y="556" text-anchor="middle" font-size="10.5" fill="#9b2c2c">回放 S3 的 ROW_T_INSERT → 撞 c2=1</text>
+
+  <line x1="470" y1="568" x2="470" y2="582" stroke="#dc2626" stroke-width="1.6" marker-end="url(#arwR)"/>
+  <rect x="355" y="584" width="230" height="40" rx="7" fill="#fdecec" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="470" y="601" text-anchor="middle" font-size="11.5" font-weight="700" fill="#b91c1c">✗ Session 2：ERROR 1062</text>
+  <text x="470" y="617" text-anchor="middle" font-size="10" font-family="monospace" fill="#7f1d1d">Duplicate entry '1' for key 't1.c2'</text>
+
+  <!-- conclusion -->
+  <rect x="50" y="638" width="840" height="58" rx="10" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+  <text x="470" y="660" text-anchor="middle" font-size="12.5" font-weight="700" fill="#7c4a04">伪重复：表最终只有 (1,1)、c2 并无重复，ALTER 却失败</text>
+  <text x="470" y="680" text-anchor="middle" font-size="11" fill="#8a5a00">S3 撞键失败回滚只抹掉了数据，却抹不掉已写下的 row log；S2 升到 X 后 apply 时再次撞 c2=1 → ALTER 一并失败</text>
+
+  <text x="470" y="716" text-anchor="middle" font-size="10.5" fill="#94a3b8">MDL 双向：正向 S1·SW ┤ S2·X ┤ S3·SW；反向 S2 升 X 又被 S3·SW 挡，等 S3 回滚释放后才 apply</text>
+  <text x="470" y="734" text-anchor="middle" font-size="9.5" fill="#94a3b8">注：表级 DML 的 MDL 锁是 SW；IX(MDL_INTENTION_EXCLUSIVE) 只用于 GLOBAL/SCHEMA 等 scope，不用于表（InnoDB 表意向锁 LOCK_IX 是另一套锁）· MySQL-5.7 / 8.0</text>
+</svg>
