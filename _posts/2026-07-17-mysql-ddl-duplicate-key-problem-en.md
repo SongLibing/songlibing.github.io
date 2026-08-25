@@ -1,5 +1,6 @@
 ---
 title: 'MySQL Online DDL "Duplicate Key" Optimization'
+description: Why MySQL Online DDL sometimes fails with a Duplicate Entry error, how the row log and MVCC produce it, and how AliSQL eliminates it by safely ignoring the false duplicates.
 date: 2026-07-17 16:30:00 +0800
 categories: [Database, MySQL]
 tags: [MySQL, DDL, Online DDL, InnoDB]
