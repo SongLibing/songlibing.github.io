@@ -85,7 +85,7 @@ export MALLOC_CONF="prof:true,prof_active:true,prof_prefix:/tmp/mysqld.jedump"
 
 - `prof`: enables profiling; can only be set before starting mysqld.
 - `prof_active`: sets the profiling state to active; if set to false, allocation information is not recorded.
-- `prof_prefix`: sets the location and filename prefix for the profiling snapshots.
+- `prof_prefix`: sets the directory and filename prefix for the snapshot files. jemalloc appends its own suffix to this prefix (the exact format is shown in the section on generating a call graph below), so do not add a trailing dot yourself, or the filenames get a doubled dot. If `prof_prefix` is not set it defaults to `jeprof`; if it is set to an empty string, `prof.dump` returns failure without writing a file, so always give it a non-empty value.
 
 *Profiling must be enabled at compile time.* If the jemalloc library does not support profiling, you get the following error:
 
@@ -100,6 +100,8 @@ Based on sysbench benchmarks, we can draw roughly the following conclusions:
 - With Jemalloc 5.2, `prof:true,prof_active:false` has essentially no performance impact; `prof:true,prof_active:true` causes about a 4% drop under high concurrency.
 - With Jemalloc 5.3, neither case has a noticeable performance impact.
 
+These figures are for the default sampling rate. jemalloc records one sample per `2^lg_prof_sample` bytes allocated on average; `lg_prof_sample` defaults to `19`, which is about one sample per 512 KB. Lowering it samples more frequently, giving finer-grained data at the cost of higher overhead; raising it does the opposite. Adjust this knob when you need more accurate profiles or lower overhead.
+
 ## Generating Snapshots Automatically
 
 jemalloc offers two ways to generate snapshots automatically:
@@ -108,8 +110,8 @@ jemalloc offers two ways to generate snapshots automatically:
 - `prof_gdump`: dump each time total memory reaches a new high.
 
 ```shell
-export MALLOC_CONF="prof:true,prof_active:true,lg_prof_interval:30,prof_prefix:/tmp/mysqld.jedump."
-export MALLOC_CONF="prof:true,prof_active:true,prof_gdump:true,prof_prefix:/tmp/mysqld.jedump."
+export MALLOC_CONF="prof:true,prof_active:true,lg_prof_interval:30,prof_prefix:/tmp/mysqld.jedump"
+export MALLOC_CONF="prof:true,prof_active:true,prof_gdump:true,prof_prefix:/tmp/mysqld.jedump"
 ```
 
 ## Generating Snapshots Manually
@@ -122,9 +124,12 @@ If you are on community MySQL, how do you generate a snapshot? Here are two manu
 
 This approach uses gdb to call the `mallctl` function to generate a snapshot. In this case you do not need to set `lg_prof_interval`.
 
+> Every `mallctl` call in the gdb scripts below is cast to `(int)`. This is required when jemalloc is the stripped library installed from a distribution package (`apt install libjemalloc2`, `yum install jemalloc`): gdb then has only the minimal symbols from `.dynsym` and no DWARF debug information, so it cannot determine `mallctl`'s return type and refuses to call it with the error `'mallctl' has unknown return type; cast the call to its declared return type`. The explicit `(int)` cast supplies the return type. A jemalloc built from source with `-g` and left unstripped already carries the type information, but the cast is harmless there, so the scripts include it unconditionally.
+{: .prompt-warning }
+
 ```shell
 define jeprof_dump
-  p mallctl("prof.dump", 0, 0, 0, 0)
+  p (int) mallctl("prof.dump", 0, 0, 0, 0)
 end
 
 jeprof_dump
@@ -144,10 +149,10 @@ define jeprof_status
   set $backup_opt_tc_log_size = opt_tc_log_size
   set opt_tc_log_size = sizeof(opt_help)
 
-  call mallctl("opt.prof", &opt_help, &opt_tc_log_size, 0, 0)
+  call (int) mallctl("opt.prof", &opt_help, &opt_tc_log_size, 0, 0)
   printf "opt.prof is %d\n", opt_help
 
-  call mallctl("prof.active", &opt_help, &opt_tc_log_size, 0, 0)
+  call (int) mallctl("prof.active", &opt_help, &opt_tc_log_size, 0, 0)
   printf "prof.active is %d\n", opt_help
 
   set opt_help = $backup_opt_help
@@ -158,7 +163,12 @@ jeprof_status
 
 ```shell
 define jeprof_off
-  p mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
+  set $backup_opt_help = opt_help
+  set opt_help = 0
+
+  p (int) mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
+
+  set opt_help = $backup_opt_help
 end
 jeprof_off
 ```
@@ -168,12 +178,14 @@ define jeprof_on
   set $backup_opt_help = opt_help
   set opt_help = 1
 
-  p mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
+  p (int) mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
 
   set opt_help = $backup_opt_help
 end
 jeprof_on
 ```
+
+These scripts borrow the process variables `opt_help` and `opt_tc_log_size` as scratch space; any writable variables of a suitable type would do. Both `jeprof_on` and `jeprof_off` pass `&opt_help` as the new value (`newp`) for `prof.active`, so `opt_help` must be set to the intended value first — `1` to enable, `0` to disable — and then restored. `jeprof_on` sets it to `1` and `jeprof_off` sets it to `0`; do not rely on the variable's current value, or the command may enable profiling when you meant to disable it.
 
 ## Generating a Snapshot with a UDF
 
@@ -216,7 +228,7 @@ typedef struct st_udf_init
   void *extension;
 } UDF_INIT;
 
-// Check whether prof is enabled (opt.prof); returns 0 on success
+// Return whether profiling was compiled in and enabled (opt.prof): 1 if on, 0 if off; NULL on error
 PLUGIN_EXPORT my_bool
 jeprof_prof_status_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -240,7 +252,7 @@ jeprof_prof_status(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error)
     return enabled ? 1 : 0;
 }
 
-// Check the prof.active state (prof.active); returns 0 on success
+// Return the prof.active state: 1 if active, 0 if not; NULL on error
 PLUGIN_EXPORT my_bool
 jeprof_active_status_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -264,7 +276,7 @@ jeprof_active_status(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *erro
     return active ? 1 : 0;
 }
 
-// Enable profiling: set prof.active to true; returns 0 on success
+// Enable profiling: set prof.active to true; returns 0 on success, NULL on error
 PLUGIN_EXPORT my_bool
 jeprof_enable_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -287,7 +299,7 @@ jeprof_enable(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error)
     return 0;
 }
 
-// Disable profiling: set prof.active to false; returns 0 on success
+// Disable profiling: set prof.active to false; returns 0 on success, NULL on error
 PLUGIN_EXPORT my_bool
 jeprof_disable_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -309,7 +321,7 @@ jeprof_disable(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error)
     return 0;
 }
 
-// Dump the memory profile; returns 0 on success
+// Dump the memory profile; returns 0 on success, NULL on error
 PLUGIN_EXPORT my_bool
 jeprof_dump_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -344,6 +356,9 @@ Then compile with the following command, and copy the resulting jemalloc_udf.so 
 gcc -shared -fPIC -o jemalloc_udf.so jeprof_udf.c
 ```
 
+> This command deliberately does not link jemalloc, so `mallctl` stays undefined in `jemalloc_udf.so` (`nm -D --undefined-only jemalloc_udf.so` shows `U mallctl`). The symbol is resolved at run time from the jemalloc that mysqld has already loaded through `LD_PRELOAD`. As a result, `CREATE FUNCTION` succeeds only on an instance that is running with jemalloc preloaded; on an instance without it, the load fails with `Can't open shared library ... undefined symbol: mallctl`. Do not statically link a second copy of jemalloc into this library.
+{: .prompt-warning }
+
 Before using these UDFs, load them with the following SQL:
 
 ```sql
@@ -358,11 +373,13 @@ You can then call them via `SELECT jeprof_xxx()`, as shown:
 
 ![](https://mmbiz.qpic.cn/sz_mmbiz_png/ibf4J5w9SFz7NRR7TKZ1xDE4uMGDm1rDvd4NonVULtibYficzsnxUNDUY9sN7GUQpFlHZ9xUQpovFucJw1p2n8yiaA/640?wx_fmt=png&from=appmsg)
 
-- `jeprof_prof_status` shows the state of the `prof` option; 1 means on, 0 means off.
-- `jeprof_active_status` shows the state of `prof.active`; 1 means on, 0 means off.
-- `jeprof_enable` sets `prof.active` to `true`; returns 0 on success, 1 otherwise.
-- `jeprof_disable` sets `prof.active` to `false`; returns 0 on success, 1 otherwise.
-- `jeprof_dump` generates a memory snapshot file; returns 0 on success, 1 otherwise.
+- `jeprof_prof_status` returns the state of the `prof` option: 1 if on, 0 if off.
+- `jeprof_active_status` returns the state of `prof.active`: 1 if on, 0 if off.
+- `jeprof_enable` sets `prof.active` to `true`; returns 0 on success.
+- `jeprof_disable` sets `prof.active` to `false`; returns 0 on success.
+- `jeprof_dump` generates a memory snapshot file; returns 0 on success.
+
+If the underlying `mallctl` call fails, each of these functions sets the UDF error flag, so the `SELECT` returns `NULL` rather than a numeric code.
 
 ## Generating a Profiling Call Graph
 
@@ -370,18 +387,20 @@ jemalloc includes a `jeprof` command-line tool that displays the information in 
 
 ![](https://mmbiz.qpic.cn/sz_mmbiz_png/ibf4J5w9SFz7NRR7TKZ1xDE4uMGDm1rDvf7IPGcffqqyQ2zPyW47rMfsc0ibicZcRKM9Aut8zicRSrDDsG4H7bKMZw/640?wx_fmt=png&from=appmsg)
 
+jemalloc names each snapshot file `<prefix>.<pid>.<seq>.<type><seq>.heap`, where the type character is `m` for a manual dump (`prof.dump`), `i` for an interval dump (`lg_prof_interval`), and `g` for a gdump (`prof_gdump`). With the prefix `/tmp/mysqld.jedump` used above, an actual file therefore looks like `/tmp/mysqld.jedump.4211.0.m0.heap`. Substitute the real filenames from your dump directory in the commands below.
+
 The command to generate the graph:
 
 ```shell
-jeprof ./sql/mysqld mysqld.jedump.2 -svg > jedump.svg
+jeprof ./sql/mysqld /tmp/mysqld.jedump.4211.1.m1.heap -svg > jedump.svg
 ```
 
 And to diff two snapshots:
 
 ```shell
-jeprof ./sql/mysqld --base mysqld.jedump.1 mysqld.jedump.2 -svg > jedump_diff.svg
+jeprof ./sql/mysqld --base /tmp/mysqld.jedump.4211.0.m0.heap /tmp/mysqld.jedump.4211.1.m1.heap -svg > jedump_diff.svg
 ```
 
 ## Conclusion
 
-Jemalloc provides powerful memory-analysis capabilities. When it records allocation information, it also captures the call stack, and that information helps us locate memory problems quickly and precisely. Through MySQL's UDF mechanism, jemalloc's snapshot capability can be integrated into MySQL conveniently and enabled and used online. Jemalloc collects memory statistics by sampling, with very low overhead under the default configuration, so it can be enabled with confidence.
+Jemalloc provides powerful memory-analysis capabilities. When it records allocation information, it also captures the call stack, and that information helps us locate memory problems quickly and precisely. Through MySQL's UDF mechanism, jemalloc's snapshot capability can be integrated into MySQL conveniently and enabled and used online. Because jemalloc collects the statistics by sampling, the overhead at the default sampling rate is low — negligible on Jemalloc 5.3, and only a few percent on 5.2 even under high concurrency — so in most cases it can be enabled with confidence.
