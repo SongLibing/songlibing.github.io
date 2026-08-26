@@ -85,7 +85,7 @@ export MALLOC_CONF="prof:true,prof_active:true,prof_prefix:/tmp/mysqld.jedump"
 
 - `prof`: enables profiling; can only be set before starting mysqld.
 - `prof_active`: sets the profiling state to active; if set to false, allocation information is not recorded.
-- `prof_prefix`: sets the directory and filename prefix for the snapshot files. jemalloc appends its own suffix to this prefix (the exact format is shown in the section on generating a call graph below), so do not add a trailing dot yourself, or the filenames get a doubled dot. If `prof_prefix` is not set it defaults to `jeprof`; if it is set to an empty string, `prof.dump` returns failure without writing a file, so always give it a non-empty value.
+- `prof_prefix`: sets the directory and filename prefix for the snapshot files.
 
 *Profiling must be enabled at compile time.* If the jemalloc library does not support profiling, you get the following error:
 
@@ -123,9 +123,6 @@ If you are on community MySQL, how do you generate a snapshot? Here are two manu
 ## Generating a Snapshot with gdb
 
 This approach uses gdb to call the `mallctl` function to generate a snapshot. In this case you do not need to set `lg_prof_interval`.
-
-> Every `mallctl` call in the gdb scripts below is cast to `(int)`. This is required when jemalloc is the stripped library installed from a distribution package (`apt install libjemalloc2`, `yum install jemalloc`): gdb then has only the minimal symbols from `.dynsym` and no DWARF debug information, so it cannot determine `mallctl`'s return type and refuses to call it with the error `'mallctl' has unknown return type; cast the call to its declared return type`. The explicit `(int)` cast supplies the return type. A jemalloc built from source with `-g` and left unstripped already carries the type information, but the cast is harmless there, so the scripts include it unconditionally.
-{: .prompt-warning }
 
 ```shell
 define jeprof_dump
@@ -185,7 +182,7 @@ end
 jeprof_on
 ```
 
-These scripts borrow the process variables `opt_help` and `opt_tc_log_size` as scratch space; any writable variables of a suitable type would do. Both `jeprof_on` and `jeprof_off` pass `&opt_help` as the new value (`newp`) for `prof.active`, so `opt_help` must be set to the intended value first — `1` to enable, `0` to disable — and then restored. `jeprof_on` sets it to `1` and `jeprof_off` sets it to `0`; do not rely on the variable's current value, or the command may enable profiling when you meant to disable it.
+These scripts borrow the process variables `opt_help` and `opt_tc_log_size` as scratch space; any writable variables of a suitable type would do. Both `jeprof_on` and `jeprof_off` pass `&opt_help` as the new value (`newp`) for `prof.active`.
 
 ## Generating a Snapshot with a UDF
 
@@ -355,9 +352,6 @@ Then compile with the following command, and copy the resulting jemalloc_udf.so 
 ```bash
 gcc -shared -fPIC -o jemalloc_udf.so jeprof_udf.c
 ```
-
-> This command deliberately does not link jemalloc, so `mallctl` stays undefined in `jemalloc_udf.so` (`nm -D --undefined-only jemalloc_udf.so` shows `U mallctl`). The symbol is resolved at run time from the jemalloc that mysqld has already loaded through `LD_PRELOAD`. As a result, `CREATE FUNCTION` succeeds only on an instance that is running with jemalloc preloaded; on an instance without it, the load fails with `Can't open shared library ... undefined symbol: mallctl`. Do not statically link a second copy of jemalloc into this library.
-{: .prompt-warning }
 
 Before using these UDFs, load them with the following SQL:
 
