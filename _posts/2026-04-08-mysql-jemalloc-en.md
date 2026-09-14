@@ -7,7 +7,7 @@ tags: [MySQL, Memory, Jemalloc, Performance]
 toc: true
 lang: en
 hidden: true
-published: false
+published: true
 ---
 
 > This article is also available in Chinese: [中文版](/posts/mysql-jemalloc/). Browse [all English articles](/english/).
@@ -35,7 +35,8 @@ Jemalloc is well suited both to diagnosing memory problems in MySQL and to study
 
 ![](https://mmbiz.qpic.cn/sz_mmbiz_png/ibf4J5w9SFz4qibCyCxtwSASicXk2rlzparWibCDhQqeLp8UZj6loNYmABgB6KFTfibrgsVo3ibTvJhUBr3AqQ4VXBlQ/640?wx_fmt=png&from=appmsg)
 
-Because the leaked memory is a very small fraction of the total, this figure is produced by diffing the samples from two points in time. From the call stack, we can clearly see that the memory is allocated when the `Clone_persist_gtid` thread opens a system table. The call stack quickly leads to the cause: the thread's `THD::mem_root` is never cleared, which leaks memory (see Bug#107991 for details). The fix is simple — a single line of code. We fixed it in AliSQL soon after and submitted the patch to the official team, which fixed the issue in the latest release, MySQL 8.0.42.
+Because the leaked memory is a very small fraction of the total, this figure is produced by diffing the samples from two points in time. From the call stack, we can clearly see that the memory is allocated when the `Clone_persist_gtid` thread opens a system table. The call stack quickly leads to the cause: the thread's `THD::mem_root` is never cleared, which leaks memory (see Bug#107991 for details). The fix is simple — a single line of code. We fixed it in AliSQL soon after and submitted the patch to the official team, which fixed the issue in the release MySQL 8.0.42.
+
 
 ## Case 2 — Wasted Memory in the AHI
 
@@ -48,7 +49,7 @@ We can see that during buffer-pool initialization, the allocated memory falls in
 - `btr_search_sys_create` allocated 1280 MB for the adaptive hash index (AHI) structures.
 - `buf_block_init` allocated the `os_event` structures for each page's rw-lock and mutex in the buffer pool, totaling 1918.8 MB.
 
-Because the AHI has serious stability problems, we disable it by default, and the official team also changed the default to OFF starting in MySQL 8.4. Even so, with the AHI disabled it still uses 1 GB of memory. Reading the code shows that this memory is `1/64` of the buffer-pool size (see [Bug#112223](https://bugs.mysql.com/bug.php?id=112223) for the detailed analysis). That is a fair amount of wasted memory, so AliSQL fixed it: with the AHI disabled, this memory is no longer allocated.
+Because the AHI has serious stability problems, we disable it by default, and the official team also changed the default to OFF starting in MySQL 8.4. Even so, with the AHI disabled it still uses 1 GB of memory. Reading the code shows that this memory is `1/64` of the buffer-pool size (see [Bug#112223](https://bugs.mysql.com/bug.php?id=112223) for the detailed analysis). That is a fair amount of wasted memory, so AliSQL fixed it: with the AHI disabled, this memory is no longer allocated. I also created a [PR](https://github.com/mysql/mysql-server/pull/729) to mysql-server repo for this.
 
 *Why doesn't the figure show the 64 GB used by the buffer pool? Because the buffer pool is allocated with `mmap`, not `malloc`, so it is not tracked by jemalloc.*
 

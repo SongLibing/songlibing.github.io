@@ -5,6 +5,8 @@ categories: [数据库, MySQL]
 tags: [MySQL, 内存, Jemalloc, 性能优化]
 toc: true
 ---
+> 本文也有英文版：[English version](/posts/mysql-jemalloc-en/)。
+{: .prompt-tip }
 
 内存泄漏、内存占用高是MySQL中较常见的问题，这些问题的排查非常依赖完善的内存监控信息。MySQL的Performance Schema中提供了内存的监控信息，PFS的内存统计信息粒度比较粗，很难精准的定位到问题代码。
 
@@ -74,14 +76,16 @@ export MALLOC_CONF="prof:true,prof_active:true,prof_prefix:/tmp/mysqld.jedump"
 - Jemalloc-5.2 `prof:true,prof_active:false`时,  对性能基本没有影响，`prof:true, prof_active:true`时，高并发下大约有4%的性能下降。
 - Jemalloc-5.3 在两种情况下对性能都没有明显的影响。
 
+以上数据是在默认采样率下测得的。jemalloc 平均每分配 `2^lg_prof_sample` 字节采样一次，`lg_prof_sample` 默认为 `19`，即大约每 512KB 采样一次。调小该值会采样更频繁，数据更精细但开销更高；调大则相反。需要更精确的采样数据或更低的开销时，可以调整这个参数。
+
 ## 自动生成内存快照
 jemalloc提供了两种自动生成快照的方式：
 * lg_prof_interval 每分配多少内存后，dump一次。 值为2的N次方，比如设置为30，则为2的30次方即1GB，意味着每1GBdump一次。
 * prof_gdump 每次当总内存数创新高时dump 一次。
 
 ```shell
-export MALLOC_CONF="prof:true,prof_active:true,lg_prof_interval:30,prof_prefix:/tmp/mysqld.jedump." 
-export MALLOC_CONF="prof:true,prof_active:true,prof_gdump:true,prof_prefix:/tmp/mysqld.jedump." 
+export MALLOC_CONF="prof:true,prof_active:true,lg_prof_interval:30,prof_prefix:/tmp/mysqld.jedump" 
+export MALLOC_CONF="prof:true,prof_active:true,prof_gdump:true,prof_prefix:/tmp/mysqld.jedump" 
 ```
 
 ## 手动生成内存快照
@@ -94,7 +98,7 @@ export MALLOC_CONF="prof:true,prof_active:true,prof_gdump:true,prof_prefix:/tmp/
 
 ```shell
 define jeprof_dump
-  p mallctl("prof.dump", 0, 0, 0, 0)
+  p (int) mallctl("prof.dump", 0, 0, 0, 0)
 end
 
 jeprof_dump
@@ -114,10 +118,10 @@ define jeprof_status
   set $backup_opt_tc_log_size = opt_tc_log_size
   set opt_tc_log_size = sizeof(opt_help)
 
-  call mallctl("opt.prof", &opt_help, &opt_tc_log_size, 0, 0)
+  call (int) mallctl("opt.prof", &opt_help, &opt_tc_log_size, 0, 0)
   printf "opt.prof is %d\n", opt_help
 
-  call mallctl("prof.active", &opt_help, &opt_tc_log_size, 0, 0)
+  call (int) mallctl("prof.active", &opt_help, &opt_tc_log_size, 0, 0)
   printf "prof.active is %d\n", opt_help
 
   set opt_help = $backup_opt_help
@@ -127,7 +131,12 @@ jeprof_status
 ```
 ```shell
 define jeprof_off
-  p mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
+  set $backup_opt_help = opt_help
+  set opt_help = 0
+
+  p (int) mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
+
+  set opt_help = $backup_opt_help
 end
 jeprof_off
 ```
@@ -136,12 +145,14 @@ define jeprof_on
   set $backup_opt_help = opt_help
   set opt_help = 1
 
-  p mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
+  p (int) mallctl("prof.active", 0, 0, &opt_help, sizeof(bool))
 
   set opt_help = $backup_opt_help
 end
 jeprof_on
 ```
+
+这些脚本借用了进程中的 `opt_help` 和 `opt_tc_log_size` 变量作为临时存储，换成其它类型合适的可写变量也可以。`jeprof_on` 和 `jeprof_off` 都把 `&opt_help` 作为 `prof.active` 的新值（`newp`）传入。
 
 ## UDF 产生内存快照
 
@@ -184,7 +195,7 @@ typedef struct st_udf_init
   void *extension;
 } UDF_INIT;
 
-// 查看prof是否开启 (opt.prof)，成功return 0
+// 返回prof是否在编译期开启 (opt.prof)：1为开启，0为关闭；出错返回NULL
 PLUGIN_EXPORT my_bool
 jeprof_prof_status_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -208,7 +219,7 @@ jeprof_prof_status(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error)
     return enabled ? 1 : 0;
 }
 
-// 查看prof.active状态 (prof.active)，成功return 0
+// 返回prof.active的状态：1为active，0为非active；出错返回NULL
 PLUGIN_EXPORT my_bool
 jeprof_active_status_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -232,7 +243,7 @@ jeprof_active_status(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *erro
     return active ? 1 : 0;
 }
 
-// 开启 profiling, 设置prof.active为true，成功return 0
+// 开启 profiling, 设置prof.active为true，成功return 0，出错返回NULL
 PLUGIN_EXPORT my_bool
 jeprof_enable_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -255,7 +266,7 @@ jeprof_enable(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error)
     return 0;
 }
 
-// 关闭 profiling, 设置prof.active为false，成功 return 0
+// 关闭 profiling, 设置prof.active为false，成功 return 0，出错返回NULL
 PLUGIN_EXPORT my_bool
 jeprof_disable_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -277,7 +288,7 @@ jeprof_disable(UDF_INIT *initid, UDF_ARGS *args, char *is_null, char *error)
     return 0;
 }
 
-// Dump 内存堆栈信息, 成功return 0
+// Dump 内存堆栈信息, 成功return 0，出错返回NULL
 PLUGIN_EXPORT my_bool
 jeprof_dump_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
@@ -318,26 +329,30 @@ CREATE FUNCTION jeprof_active_status RETURNS INTEGER SONAME 'jemalloc_udf.so';
 ```
 然后就可以通过SELECT jeprof_xxx()来调用。如图所示：
 ![](https://mmbiz.qpic.cn/sz_mmbiz_png/ibf4J5w9SFz7NRR7TKZ1xDE4uMGDm1rDvd4NonVULtibYficzsnxUNDUY9sN7GUQpFlHZ9xUQpovFucJw1p2n8yiaA/640?wx_fmt=png&from=appmsg)
-- `jeprof_prof_status`显示`prof`参数的状态，返回1代表开启，0代表关闭。
-- `jeprof_active_status`显示`prof.active`的状态，返回1代表开启，0代表关闭。
-- `jeprof_enable` 设置`prof.active`为`true`，成功返回0，否则返回1. 
-- `jeprof_disable`设置`prof.active`为`false`, 成功返回0，否则返回1. 
-- `jeprof_dump` 生成一个内存快照文件, 成功返回0，否则返回1. 
+- `jeprof_prof_status`返回`prof`参数的状态，1代表开启，0代表关闭。
+- `jeprof_active_status`返回`prof.active`的状态，1代表开启，0代表关闭。
+- `jeprof_enable` 设置`prof.active`为`true`，成功返回0。
+- `jeprof_disable`设置`prof.active`为`false`，成功返回0。
+- `jeprof_dump` 生成一个内存快照文件，成功返回0。
+
+如果底层的`mallctl`调用失败，这些函数会置UDF的error标志，因此`SELECT`返回`NULL`，而不是某个数值。
 
 ## 生成Profiling 调用关系图
 Jemalloc中有一个`jeprof`命令行工具，用来直观的显示内存快照中的信息，一个常用的就是生成调用关系图。快照信息可以用svg,pdf等方式呈现，如图所示
 ![](https://mmbiz.qpic.cn/sz_mmbiz_png/ibf4J5w9SFz7NRR7TKZ1xDE4uMGDm1rDvf7IPGcffqqyQ2zPyW47rMfsc0ibicZcRKM9Aut8zicRSrDDsG4H7bKMZw/640?wx_fmt=png&from=appmsg)
 
+jemalloc 生成的快照文件名格式为 `<prefix>.<pid>.<seq>.<type><seq>.heap`，其中类型字符 `m` 表示手动 dump（`prof.dump`），`i` 表示 interval dump（`lg_prof_interval`），`g` 表示 gdump（`prof_gdump`）。以上面的前缀 `/tmp/mysqld.jedump` 为例，实际文件名类似 `/tmp/mysqld.jedump.4211.0.m0.heap`。下面命令中请替换成你 dump 目录里的真实文件名。
+
 生图命令如下：
 ```shell
-jeprof  ./sql/mysqld mysqld.jedump.2 -svg > jedump.svg
+jeprof ./sql/mysqld /tmp/mysqld.jedump.4211.1.m1.heap -svg > jedump.svg
 ```
 
 产生两个快照的diff命令如下:
-``` shell
-jeprof ./sql/mysqld --base mysqld.jedump.1 mysqld.jedump.2 -svg > jedump_diff.svg
+```shell
+jeprof ./sql/mysqld --base /tmp/mysqld.jedump.4211.0.m0.heap /tmp/mysqld.jedump.4211.1.m1.heap -svg > jedump_diff.svg
 ```
 
 ## 总结
-Jemalloc提供了强大内存分析功能，在记录分配的内存信息时采集了函数栈信息，这些信息可以帮助我们快速准确的定位内存问题。通过MySQL的UDF机制，可以很方便的将jemalloc的内存快照能力集成到MySQL中，并且在线的开启和使用。Jemalloc通过采样的来统计内存信息，在默认配置下开销很小，可以放心开启。
+Jemalloc提供了强大内存分析功能，在记录分配的内存信息时采集了函数栈信息，这些信息可以帮助我们快速准确的定位内存问题。通过MySQL的UDF机制，可以很方便的将jemalloc的内存快照能力集成到MySQL中，并且在线的开启和使用。Jemalloc通过采样来统计内存信息，在默认采样率下开销很小——Jemalloc-5.3 上几乎可以忽略，5.2 上即使在高并发下也只有几个百分点，因此大多数情况下都可以放心开启。
 
