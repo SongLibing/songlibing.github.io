@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Chinese Blogs
+title: 中文博客
 icon: fas fa-book
 order: 2
 permalink: /chinese/
