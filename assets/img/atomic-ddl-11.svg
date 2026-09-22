@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="717" height="435" viewBox="0 0 717 435">
+  <defs>
+    <marker id="g-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#168253"/>
+    </marker>
+    <style>
+      .box{fill:none;stroke:#168253;stroke-width:1.25}
+      .flow{fill:none;stroke:#168253;stroke-width:1.25;marker-end:url(#g-arrow)}
+      .t{font-family:Arial,Helvetica,sans-serif;font-size:16px;fill:#111;stroke:#fff;stroke-width:.7;paint-order:stroke;stroke-linejoin:round}
+    </style>
+  </defs>
+
+  <text class="t" x="14" y="28">DDL</text>
+  <path class="flow" d="M70 21 H183"/>
+
+  <rect class="box" x="185.5" y="1.5" width="217" height="48"/>
+  <text class="t" x="294" y="30" text-anchor="middle">Start DDL Trx</text>
+  <path class="flow" d="M294 49.5 V96"/>
+
+  <rect class="box" x="185.5" y="97.5" width="217" height="48"/>
+  <text class="t" x="294" y="127" text-anchor="middle">DDL Trx Prepare</text>
+  <path class="flow" d="M294 145.5 V193"/>
+
+  <rect class="box" x="185.5" y="194.5" width="217" height="48"/>
+  <text class="t" x="294" y="214" text-anchor="middle">Write Binlog</text>
+  <text class="t" x="294" y="232" text-anchor="middle">Sync Binlog</text>
+  <path class="flow" d="M294 242.5 V289"/>
+  <path class="flow" d="M402.5 216 H498"/>
+
+  <rect class="box" x="500.5" y="199.5" width="215" height="42"/>
+  <text class="t" x="608" y="226" text-anchor="middle">DDL Query Event(Xid)</text>
+  <rect class="box" x="500.5" y="244.5" width="215" height="42"/>
+  <text class="t" x="608" y="313" text-anchor="middle">Binlog.000001</text>
+
+  <rect class="box" x="185.5" y="290.5" width="217" height="48"/>
+  <text class="t" x="294" y="320" text-anchor="middle">DDL Trx Commit</text>
+  <path class="flow" d="M294 338.5 V385"/>
+
+  <rect class="box" x="185.5" y="386.5" width="217" height="47"/>
+  <text class="t" x="294" y="416" text-anchor="middle">Post DDL</text>
+  <path class="flow" d="M184 411 H71"/>
+  <text class="t" x="25" y="419">OK</text>
+</svg>
