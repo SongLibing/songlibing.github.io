@@ -238,7 +238,7 @@ This DDL performs the following operations on the DDL log table:
 There are many kinds of ALTER TABLE; the most complex is the case that requires rebuilding the table. In that case the DDL log is used as both redo and undo.
 
 ```sql
-ALTER TABLE t2 DROP COLUMN c3 int;
+ALTER TABLE t2 ADD COLUMN c3 int ALGORITHM = INPLACE;
 ```
 
 This DDL performs the following operations on the DDL log table:
@@ -267,7 +267,7 @@ A crash can happen before the post-DDL phase finishes, so during recovery after 
 
 ## Binlog Crash Safety
 
-![](/assets/img/atomic-ddl-11.png)
+![](/assets/img/atomic-ddl-11.svg)
 
 Every DDL is now a transaction: if it fails midway it can be rolled back, and if it commits the DDL has succeeded. When the binlog is enabled, the DDL transaction also uses two-phase commit. MySQL 8.0 extended the binlog's `Query_log_event` so that the DDL transaction's `Xid` is stored in the `Query_log_event`.
 

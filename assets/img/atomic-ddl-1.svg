@@ -18,7 +18,7 @@
   <path class="flow" d="M438.5 44.5 V101.5"/>
 
   <rect class="box" x="338.5" y="103.5" width="208" height="43"/>
-  <text class="t" x="442.5" y="130" text-anchor="middle">Add Metadata</text>
+  <text class="t" x="442.5" y="130" text-anchor="middle">Update Metadata</text>
   <path class="flow" d="M438.5 146.5 V202.5"/>
 
   <rect class="box" x="338.5" y="204.5" width="208" height="43"/>
@@ -44,7 +44,7 @@
   <text class="t" x="694" y="279">DDL Log Table</text>
   <rect class="box" x="650.5" y="310.5" width="230" height="59"/>
   <path class="box" d="M650.5 340.5 H880.5"/>
-  <text class="t" x="765.5" y="333" text-anchor="middle">Delete Space test/t1.ibd</text>
+  <text class="t" x="765.5" y="333" text-anchor="middle">DELETE SPACE test/t1.ibd</text>
   <path class="flow" d="M546.5 230 L648.5 320"/>
   <path class="flow" d="M650.5 369.5 L548 423"/>
   <path class="dash" d="M765.5 370 V508"/>

@@ -11,7 +11,7 @@
 
   <text class="t small" x="8" y="19">CREATE TABLE test.t1</text><path class="flow" d="M175 15 H289"/>
   <rect class="box" x="289.5" y="1.5" width="171" height="35"/><text class="t" x="375" y="25" text-anchor="middle">Start DDL Trx</text><path class="flow" d="M372 36.5 V83"/>
-  <rect class="box" x="289.5" y="84.5" width="171" height="35"/><text class="t" x="375" y="107" text-anchor="middle">Add Metadata</text><path class="flow" d="M372 119.5 V168"/>
+  <rect class="box" x="289.5" y="84.5" width="171" height="35"/><text class="t" x="375" y="107" text-anchor="middle">Update Metadata</text><path class="flow" d="M372 119.5 V168"/>
 
   <rect class="obox" x="289.5" y="170.5" width="171" height="35"/><text class="t" x="375" y="193" text-anchor="middle">Start DDL Log Trx</text><path class="oflow" d="M372 205.5 V234"/>
   <rect class="obox" x="289.5" y="235.5" width="171" height="35"/><text class="t" x="375" y="249" text-anchor="middle">Add</text><text class="t sub" x="375" y="267" text-anchor="middle">DELETE SPACE instruction</text><path class="oflow" d="M372 270.5 V303"/>
@@ -27,9 +27,9 @@
   <path class="flow" d="M289.5 661 H176"/><text class="t" x="149" y="663">OK</text>
 
   <text class="t" x="581" y="274">DDL Log Table</text>
-  <rect class="box" x="546.5" y="299.5" width="188" height="49"/><path class="box" d="M546.5 324.5 H734.5"/><text class="t small" x="640.5" y="317" text-anchor="middle">Delete Space test/t1.ibd</text><path class="oflow" d="M460.5 253 L545 313"/>
+  <rect class="box" x="546.5" y="299.5" width="188" height="49"/><path class="box" d="M546.5 324.5 H734.5"/><text class="t small" x="640.5" y="317" text-anchor="middle">DELETE SPACE test/t1.ibd</text><path class="oflow" d="M460.5 253 L545 313"/>
   <path class="dash" d="M640.5 349 V437"/>
-  <rect class="box" x="546.5" y="438.5" width="188" height="49"/><path class="box" d="M546.5 463.5 H734.5"/><text class="t small" x="640.5" y="456" text-anchor="middle" text-decoration="line-through">Delete Space test/t1.ibd</text><path class="flow" d="M460.5 404 L545 449"/>
+  <rect class="box" x="546.5" y="438.5" width="188" height="49"/><path class="box" d="M546.5 463.5 H734.5"/><text class="t small" x="640.5" y="456" text-anchor="middle" text-decoration="line-through">DELETE SPACE test/t1.ibd</text><path class="flow" d="M460.5 404 L545 449"/>
   <path class="dash" d="M640.5 488 V575"/>
   <rect class="box" x="546.5" y="576.5" width="188" height="48"/><path class="box" d="M546.5 600.5 H734.5"/><path class="flow" d="M460.5 576 L545 588"/><path class="flow" d="M546.5 624.5 L462 661"/>
 

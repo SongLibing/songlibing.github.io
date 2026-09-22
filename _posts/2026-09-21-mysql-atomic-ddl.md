@@ -235,7 +235,7 @@ RENAME TABLE t2 TO t20;
 ALTER TABLE 有很多种，最为复杂的是需要重建表的情形。在这种情况下，DDL Log 既是 Redo，也是 Undo。
 
 ```sql
-ALTER TABLE t2 ADD COLUMN c3 int;
+ALTER TABLE t2 ADD COLUMN c3 int ALGORITHM = INPLACE;
 ```
 
 该 DDL 对 DDL Log Table 的操作如下：
@@ -264,7 +264,7 @@ Crash 可能发生在 Post DDL 完成之前，所以重启后做 Recovery 时，
 
 ## Binlog Crash Safe
 
-![](/assets/img/atomic-ddl-11.png)
+![](/assets/img/atomic-ddl-11.svg)
 
 现在对于支持 Atomic DDL 的存储引擎，每个 DDL 都是一个事务了，事务过程中失败了可以回滚，事务提交则意味着 DDL 执行成功。当 Binlog 开启时，DDL 的事务也会采用两阶段提交。MySQL-8.0 对 Binlog 的 `Query_log_event` 做了扩展，DDL 事务的 Xid 会存储到 `Query_log_event` 中。
 

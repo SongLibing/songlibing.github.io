@@ -10,7 +10,7 @@
 
   <text class="t" x="12" y="26">DROP TABLE test.t1</text><path class="flow" d="M199 20 H338"/>
   <rect class="box" x="339.5" y="1.5" width="209" height="43"/><text class="t" x="444" y="29" text-anchor="middle">Start DDL Trx</text><path class="flow" d="M440 44.5 V102"/>
-  <rect class="box" x="339.5" y="103.5" width="209" height="43"/><text class="t" x="444" y="130" text-anchor="middle">Add Metadata</text><path class="flow" d="M440 146.5 V203"/>
+  <rect class="box" x="339.5" y="103.5" width="209" height="43"/><text class="t" x="444" y="130" text-anchor="middle">Update Metadata</text><path class="flow" d="M440 146.5 V203"/>
   <rect class="box" x="339.5" y="205" width="209" height="43"/><text class="t" x="444" y="221" text-anchor="middle">Add</text><text class="t sub" x="444" y="243" text-anchor="middle">DELETE SPACE instruction</text><path class="flow" d="M440 248 V304"/>
   <rect class="error" x="339.5" y="305.5" width="209" height="42"/><text class="t" x="444" y="333" text-anchor="middle">Error</text><path class="flow" d="M440 347.5 V409"/>
   <rect class="box" x="339.5" y="411.5" width="209" height="42"/><text class="t" x="444" y="439" text-anchor="middle">Rollback DDL trx</text><path class="flow" d="M440 453.5 V511"/>
@@ -18,7 +18,7 @@
   <path class="flow" d="M339.5 531 H200"/><text class="t" x="151" y="536">Error</text>
 
   <text class="t" x="696" y="184">DDL Log Table</text>
-  <rect class="box" x="652.5" y="215.5" width="230" height="59"/><path class="box" d="M652.5 245.5 H882.5"/><text class="t" x="767.5" y="239" text-anchor="middle">Delete Space test/t1.ibd</text>
+  <rect class="box" x="652.5" y="215.5" width="230" height="59"/><path class="box" d="M652.5 245.5 H882.5"/><text class="t" x="767.5" y="239" text-anchor="middle">DELETE SPACE test/t1.ibd</text>
   <path class="flow" d="M548.5 231.5 H650.5"/><path class="dash" d="M767.5 275 V414"/>
   <rect class="box" x="652.5" y="415.5" width="230" height="59"/><path class="box" d="M652.5 445.5 H882.5"/>
   <path class="flow" d="M548.5 427 L650.5 430"/><path class="flow" d="M652.5 474.5 L550 531"/>
