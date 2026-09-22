@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="881" height="568" viewBox="0 0 881 568">
+  <defs>
+    <marker id="g-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#168253"/>
+    </marker>
+    <style>
+      .box{fill:none;stroke:#168253;stroke-width:1.25}.flow{fill:none;stroke:#168253;stroke-width:1.25;marker-end:url(#g-arrow)}
+      .dash{fill:none;stroke:#168253;stroke-width:2;stroke-dasharray:3 7;marker-end:url(#g-arrow)}
+      .t{font-family:Arial,Helvetica,sans-serif;font-size:18px;fill:#111;stroke:#fff;stroke-width:.7;paint-order:stroke;stroke-linejoin:round}.sub{font-size:16px}
+    </style>
+  </defs>
+
+  <text class="t" x="12" y="26">DROP TABLE test.t1</text>
+  <path class="flow" d="M199 20 H337"/>
+
+  <rect class="box" x="338.5" y="1.5" width="208" height="43"/>
+  <text class="t" x="442.5" y="29" text-anchor="middle">Start DDL Trx</text>
+  <path class="flow" d="M438.5 44.5 V101.5"/>
+
+  <rect class="box" x="338.5" y="103.5" width="208" height="43"/>
+  <text class="t" x="442.5" y="130" text-anchor="middle">Add Metadata</text>
+  <path class="flow" d="M438.5 146.5 V202.5"/>
+
+  <rect class="box" x="338.5" y="204.5" width="208" height="43"/>
+  <text class="t" x="442.5" y="221" text-anchor="middle">Add</text>
+  <text class="t sub" x="442.5" y="243" text-anchor="middle">DELETE SPACE instruction</text>
+  <path class="flow" d="M438.5 247.5 V304.5"/>
+
+  <rect class="box" x="338.5" y="306.5" width="208" height="42"/>
+  <text class="t" x="442.5" y="334" text-anchor="middle">Commit DDL trx</text>
+  <path class="flow" d="M438.5 348.5 V405.5"/>
+
+  <rect class="box" x="338.5" y="407.5" width="208" height="42"/>
+  <text class="t" x="442.5" y="424" text-anchor="middle">Post_ddl</text>
+  <text class="t" x="442.5" y="446" text-anchor="middle">Delete table file</text>
+  <path class="flow" d="M438.5 449.5 V509.5"/>
+
+  <rect class="box" x="338.5" y="511.5" width="208" height="42"/>
+  <text class="t" x="442.5" y="528" text-anchor="middle">Post_ddl</text>
+  <text class="t" x="442.5" y="550" text-anchor="middle">Delete DELETE SPACE</text>
+  <path class="flow" d="M338.5 532.5 H199"/>
+  <text class="t" x="169" y="538">OK</text>
+
+  <text class="t" x="694" y="279">DDL Log Table</text>
+  <rect class="box" x="650.5" y="310.5" width="230" height="59"/>
+  <path class="box" d="M650.5 340.5 H880.5"/>
+  <text class="t" x="765.5" y="333" text-anchor="middle">Delete Space test/t1.ibd</text>
+  <path class="flow" d="M546.5 230 L648.5 320"/>
+  <path class="flow" d="M650.5 369.5 L548 423"/>
+  <path class="dash" d="M765.5 370 V508"/>
+
+  <rect class="box" x="650.5" y="509.5" width="230" height="58"/>
+  <path class="box" d="M650.5 539.5 H880.5"/>
+  <path class="flow" d="M546.5 519 H648.5"/>
+
+</svg>
