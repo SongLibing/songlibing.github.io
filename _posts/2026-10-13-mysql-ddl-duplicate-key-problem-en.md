@@ -1,17 +1,14 @@
 ---
 title: 'MySQL Online DDL "Duplicate Key" Optimization'
 description: Why MySQL Online DDL sometimes fails with a Duplicate Entry error, how the row log and MVCC produce it, and how AliSQL eliminates it by safely ignoring the false duplicates.
-date: 2026-07-17 16:30:00 +0800
+date: 2026-10-13 16:30:00 +0800
 categories: [Database, MySQL]
 tags: [MySQL, DDL, Online DDL, InnoDB]
 toc: true
 lang: en
-hidden: true
-published: false
+hidden: false
+published: true
 ---
-
-> This article is also available in Chinese: [中文版](/posts/mysql-ddl-duplicate-key-problem/). Browse [all English articles](/english/).
-{: .prompt-tip }
 
 When you rebuild a table with MySQL's Online DDL, the operation can fail partway through with a `Duplicate Entry` error:
 
@@ -79,7 +76,8 @@ The exclusive lock in this phase also guarantees two things:
 - Every DML from the Execute phase that touched the table has committed.
 - No new DML can start, so no new row log is produced.
 
-In short, Online DDL is not *fully* online — it blocks DML during Prepare and Commit. And because a metadata lock is held for the life of a transaction, a long-running transaction that is in progress when the DDL tries to acquire `MDL_EXCLUSIVE` will block it — and while the DDL waits, it blocks other DML too, leaving the table effectively unavailable.
+> In short, Online DDL is not *fully* online — it blocks DML during Prepare and Commit. And because a metadata lock is held for the life of a transaction, a long-running transaction that is in progress when the DDL tries to acquire `MDL_EXCLUSIVE` will block it — and while the DDL waits, it blocks other DML too, leaving the table effectively unavailable.
+{: .prompt-tip }
 
 ## The Full Copy
 
@@ -96,7 +94,7 @@ The row log records page-level changes to a B+tree, and it behaves differently i
 - *Rebuilding the table*: it logs only changes to the clustered B+tree — `INSERT`, `UPDATE`, and `DELETE` — and on replay each entry is applied to *every* index.
 - *Adding an index*: it logs only changes to the new index's B+tree — `INSERT` and `DELETE`, never `UPDATE`. Since the index is still being built, these operations are *only* written to the row log and never actually applied to the B+tree — the opposite of a table rebuild, where every existing index on the old table is maintained in real time.
 
-One detail here is worth paying attention to: *when* an entry is logged. Because the row log tracks B+tree changes, an entry is written only after the B+tree operation succeeds. As the figure shows, *for a table rebuild the entry is logged after the row is inserted into the clustered B+tree; for an added index it is logged at the point the row would go into the secondary index's B+tree* — except that, for an added index, nothing is actually inserted, and only the log entry is written.
+One detail here is worth paying attention to: when an entry is logged. Because the row log tracks B+tree changes, an entry is written only after the B+tree operation succeeds. As the figure shows, `for a table rebuild the entry is logged after the row is inserted into the clustered B+tree; for an added index it is logged at the point the row would go into the secondary index's B+tree` — except that, for an added index, nothing is actually inserted, and only the log entry is written.
 
 ![](/assets/img/ddl-dupkey-1-en.svg)
 
